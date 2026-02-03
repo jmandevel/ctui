@@ -28,7 +28,6 @@ typedef struct CTUI_DVector2 {
   double y;
 } CTUI_DVector2;
 
-
 typedef struct CTUI_Matrix4x4 {
   float m[16];
 } CTUI_Matrix4x4;
@@ -61,23 +60,33 @@ typedef void (*CTUI_ResizeCallback)(CTUI_Console *console,
                                     CTUI_SVector2 console_tile_wh);
 typedef void (*CTUI_RefreshCallback)(CTUI_Console *console);
 typedef void (*CTUI_PollEventsCallback)(CTUI_Console *console);
-typedef CTUI_DVector2 (*CTUI_GetCursorViewportPosCallback)(CTUI_Console *console);
+typedef CTUI_DVector2 (*CTUI_GetCursorViewportPosCallback)(
+    CTUI_Console *console);
 typedef CTUI_DVector2 (*CTUI_GetCursorTilePosCallback)(CTUI_Console *console);
 typedef int (*CTUI_GetMouseButtonCallback)(CTUI_Console *console, int button);
 typedef int (*CTUI_GetKeyStateCallback)(CTUI_Console *console, int key);
-typedef void (*CTUI_TransformViewportCallback)(CTUI_Console *console, CTUI_FVector2 translation, CTUI_FVector2 scale);
+typedef void (*CTUI_TransformViewportCallback)(CTUI_Console *console,
+                                               CTUI_FVector2 translation,
+                                               CTUI_FVector2 scale);
 typedef void (*CTUI_ResetViewportCallback)(CTUI_Console *console);
-typedef void (*CTUI_SetWindowPixelWhCallback)(CTUI_Console *console, CTUI_IVector2 pixel_wh);
+typedef void (*CTUI_SetWindowPixelWhCallback)(CTUI_Console *console,
+                                              CTUI_IVector2 pixel_wh);
 typedef CTUI_IVector2 (*CTUI_GetWindowPixelWhCallback)(CTUI_Console *console);
-typedef void (*CTUI_SetViewportTileWhCallback)(CTUI_Console *console, CTUI_SVector2 tile_wh);
-typedef void (*CTUI_FitWindowPixelWhToViewportTileWhCallback)(CTUI_Console *console);
-typedef void (*CTUI_FitViewportTileWhToWindowPixelWhCallback)(CTUI_Console *console);
-typedef void (*CTUI_SetWindowResizableCallback)(CTUI_Console *console, int resizable);
+typedef void (*CTUI_SetViewportTileWhCallback)(CTUI_Console *console,
+                                               CTUI_SVector2 tile_wh);
+typedef void (*CTUI_FitWindowPixelWhToViewportTileWhCallback)(
+    CTUI_Console *console);
+typedef void (*CTUI_FitViewportTileWhToWindowPixelWhCallback)(
+    CTUI_Console *console);
+typedef void (*CTUI_SetWindowResizableCallback)(CTUI_Console *console,
+                                                int resizable);
 typedef int (*CTUI_GetWindowResizableCallback)(CTUI_Console *console);
 typedef int (*CTUI_GetIsFullscreenCallback)(CTUI_Console *console);
-typedef void (*CTUI_SetWindowDecoratedCallback)(CTUI_Console *console, int decorated);
+typedef void (*CTUI_SetWindowDecoratedCallback)(CTUI_Console *console,
+                                                int decorated);
 typedef int (*CTUI_GetWindowDecoratedCallback)(CTUI_Console *console);
-typedef void (*CTUI_SetWindowFloatingCallback)(CTUI_Console *console, int floating);
+typedef void (*CTUI_SetWindowFloatingCallback)(CTUI_Console *console,
+                                               int floating);
 typedef int (*CTUI_GetWindowFloatingCallback)(CTUI_Console *console);
 typedef void (*CTUI_MinimizeWindowCallback)(CTUI_Console *console);
 typedef void (*CTUI_MaximizeWindowCallback)(CTUI_Console *console);
@@ -87,7 +96,8 @@ typedef int (*CTUI_GetWindowMaximizedCallback)(CTUI_Console *console);
 typedef void (*CTUI_FocusWindowCallback)(CTUI_Console *console);
 typedef int (*CTUI_GetWindowFocusedCallback)(CTUI_Console *console);
 typedef void (*CTUI_RequestWindowAttentionCallback)(CTUI_Console *console);
-typedef void (*CTUI_SetWindowOpacityCallback)(CTUI_Console *console, float opacity);
+typedef void (*CTUI_SetWindowOpacityCallback)(CTUI_Console *console,
+                                              float opacity);
 typedef float (*CTUI_GetWindowOpacityCallback)(CTUI_Console *console);
 
 typedef struct CTUI_TuiPlatform {
@@ -105,8 +115,10 @@ typedef struct CTUI_TuiPlatform {
   CTUI_SetWindowPixelWhCallback setWindowPixelWh;
   CTUI_GetWindowPixelWhCallback getWindowPixelWh;
   CTUI_SetViewportTileWhCallback setViewportTileWh;
-  CTUI_FitWindowPixelWhToViewportTileWhCallback fitWindowPixelWhToViewportTileWh;
-  CTUI_FitViewportTileWhToWindowPixelWhCallback fitViewportTileWhToWindowPixelWh;
+  CTUI_FitWindowPixelWhToViewportTileWhCallback
+      fitWindowPixelWhToViewportTileWh;
+  CTUI_FitViewportTileWhToWindowPixelWhCallback
+      fitViewportTileWhToWindowPixelWh;
   CTUI_SetWindowResizableCallback setWindowResizable;
   CTUI_GetWindowResizableCallback getWindowResizable;
   CTUI_GetIsFullscreenCallback getIsFullscreen;
@@ -265,10 +277,7 @@ typedef enum CTUI_MouseButton {
   CTUIMB_MIDDLE = CTUIMB_3
 } CTUI_MouseButton;
 
-typedef enum CTUI_Action {
-  CTUIA_RELEASE = 0,
-  CTUIA_PRESS = 1
-} CTUI_Action;
+typedef enum CTUI_Action { CTUIA_RELEASE = 0, CTUIA_PRESS = 1 } CTUI_Action;
 
 typedef enum CTUI_EventType {
   CTUI_EVENT_NONE = 0,
@@ -406,7 +415,8 @@ void CTUI_pushEvent(CTUI_Context *ctx, CTUI_Event *event);
 
 int CTUI_nextEvent(CTUI_Context *ctx, CTUI_Event *event);
 
-CTUI_Font *CTUI_createFont(const char* ctuifont_path, const char** image_paths, size_t image_count);
+CTUI_Font *CTUI_createFont(const char *ctuifont_path, const char **image_paths,
+                           size_t image_count);
 
 void CTUI_destroyFont(CTUI_Font *font);
 
@@ -426,7 +436,8 @@ size_t CTUI_getFontImagePages(const CTUI_Font *font);
 
 CTUI_DVector2 CTUI_getLayerTileDivWh(const CTUI_ConsoleLayer *layer);
 
-void CTUI_setLayerTileDivWh(CTUI_Console *console, size_t layer_i, CTUI_DVector2 tile_div_wh);
+void CTUI_setLayerTileDivWh(CTUI_Console *console, size_t layer_i,
+                            CTUI_DVector2 tile_div_wh);
 
 const CTUI_Font *CTUI_getLayerFont(const CTUI_ConsoleLayer *layer);
 
@@ -446,12 +457,12 @@ int CTUI_getConsoleIsRealTerminal(const CTUI_Console *console);
 
 void CTUI_destroyConsole(CTUI_Console *console);
 
-int CTUI_getIsWindow(CTUI_Console* console);
+int CTUI_getIsWindow(CTUI_Console *console);
 
-void CTUI_hideWindow(CTUI_Console* console);
+void CTUI_hideWindow(CTUI_Console *console);
 
 void CTUI_setWindowedTileWh(CTUI_Console *console,
-                           CTUI_SVector2 console_tile_wh);
+                            CTUI_SVector2 console_tile_wh);
 
 void CTUI_setWindowedFullscreen(CTUI_Console *console);
 
@@ -499,23 +510,23 @@ void CTUI_setWindowOpacity(CTUI_Console *console, float opacity);
 
 float CTUI_getWindowOpacity(CTUI_Console *console);
 
-int CTUI_getHasViewport(CTUI_Console* console);
+int CTUI_getHasViewport(CTUI_Console *console);
 
-void CTUI_transformViewport(CTUI_Console* console, CTUI_FVector2 translation, CTUI_FVector2 scale);
+void CTUI_transformViewport(CTUI_Console *console, CTUI_FVector2 translation,
+                            CTUI_FVector2 scale);
 
-void CTUI_resetViewport(CTUI_Console* console);
+void CTUI_resetViewport(CTUI_Console *console);
 
-CTUI_DVector2 CTUI_getCursorViewportPos(CTUI_Console* console);
+CTUI_DVector2 CTUI_getCursorViewportPos(CTUI_Console *console);
 
-CTUI_DVector2 CTUI_getCursorTilePos(CTUI_Console* console);
+CTUI_DVector2 CTUI_getCursorTilePos(CTUI_Console *console);
 
-int CTUI_getMouseButton(CTUI_Console* console, CTUI_MouseButton button);
+int CTUI_getMouseButton(CTUI_Console *console, CTUI_MouseButton button);
 
-int CTUI_getKeyState(CTUI_Console* console, CTUI_Key key);
+int CTUI_getKeyState(CTUI_Console *console, CTUI_Key key);
 
-void CTUI_pushCodepoint(CTUI_ConsoleLayer *layer,
-                            uint32_t codepoint, CTUI_IVector2 pos_xy,
-                            CTUI_Color fg, CTUI_Color bg);
+void CTUI_pushCodepoint(CTUI_ConsoleLayer *layer, uint32_t codepoint,
+                        CTUI_IVector2 pos_xy, CTUI_Color fg, CTUI_Color bg);
 
 void CTUI_fill(CTUI_Console *console, CTUI_Color bg);
 
@@ -524,9 +535,9 @@ void CTUI_refresh(CTUI_Console *console);
 void CTUI_clear(CTUI_Console *console);
 
 struct CTUI_Console *CTUI_createGlfwOpengl33FakeTerminal(
-    struct CTUI_Context *context, CTUI_DVector2 tile_pixel_wh, size_t layer_count,
-    const CTUI_LayerInfo *layer_infos, enum CTUI_ColorMode color_mode,
-    const char *title);
+    struct CTUI_Context *context, CTUI_DVector2 tile_pixel_wh,
+    size_t layer_count, const CTUI_LayerInfo *layer_infos,
+    enum CTUI_ColorMode color_mode, const char *title);
 
 CTUI_Console *CTUI_createNcursesRealTerminal(CTUI_Context *ctx, int layer_count,
                                              enum CTUI_ColorMode color_mode);

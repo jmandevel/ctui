@@ -1,9 +1,9 @@
+#include <ctui/ctui.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctui/ctui.h>
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -68,7 +68,8 @@ int CTUI_hasConsole(CTUI_Context *context) {
 
 static int CTUI_ensureCapacity(CTUI_ConsoleLayer *layer, size_t capacity) {
   if (layer->_tiles_capacity < capacity) {
-    size_t new_capacity = layer->_tiles_capacity == 0 ? 64 : layer->_tiles_capacity * 2;
+    size_t new_capacity =
+        layer->_tiles_capacity == 0 ? 64 : layer->_tiles_capacity * 2;
     while (new_capacity < capacity) {
       new_capacity *= 2;
     }
@@ -91,9 +92,8 @@ static CTUI_ConsoleTile *CTUI_getNewTile(CTUI_ConsoleLayer *layer) {
   return &layer->_tiles[layer->_tiles_count++];
 }
 
-void CTUI_pushCodepoint(CTUI_ConsoleLayer *layer,
-                        uint32_t codepoint, CTUI_IVector2 pos_xy,
-                        CTUI_Color fg, CTUI_Color bg) {
+void CTUI_pushCodepoint(CTUI_ConsoleLayer *layer, uint32_t codepoint,
+                        CTUI_IVector2 pos_xy, CTUI_Color fg, CTUI_Color bg) {
   if (pos_xy.x < 0 || pos_xy.y < 0) {
     return;
   }
@@ -125,7 +125,8 @@ CTUI_Context *CTUI_createContext() {
   return ctx;
 }
 
-CTUI_Font *CTUI_createFont(const char *ctuifont_path, const char **image_paths, size_t image_count) {
+CTUI_Font *CTUI_createFont(const char *ctuifont_path, const char **image_paths,
+                           size_t image_count) {
   if (image_paths == NULL || image_count == 0) {
     return NULL;
   }
@@ -164,7 +165,8 @@ CTUI_Font *CTUI_createFont(const char *ctuifont_path, const char **image_paths, 
 
   // Load first image to get dimensions.
   int img_w, img_h, img_channels;
-  unsigned char *first_pixels = stbi_load(image_paths[0], &img_w, &img_h, &img_channels, 4);
+  unsigned char *first_pixels =
+      stbi_load(image_paths[0], &img_w, &img_h, &img_channels, 4);
   if (first_pixels == NULL) {
     // TODO
     free(font);
@@ -189,10 +191,12 @@ CTUI_Font *CTUI_createFont(const char *ctuifont_path, const char **image_paths, 
   // Load remaining pages.
   for (size_t i = 1; i < image_count; i++) {
     int page_w, page_h, page_channels;
-    unsigned char *page_pixels = stbi_load(image_paths[i], &page_w, &page_h, &page_channels, 4);
+    unsigned char *page_pixels =
+        stbi_load(image_paths[i], &page_w, &page_h, &page_channels, 4);
     if (page_pixels == NULL || page_w != img_w || page_h != img_h) {
       // TODO: dimensions must match
-      if (page_pixels != NULL) stbi_image_free(page_pixels);
+      if (page_pixels != NULL)
+        stbi_image_free(page_pixels);
       free(all_pixels);
       free(font);
       fclose(fp);
@@ -212,10 +216,12 @@ CTUI_Font *CTUI_createFont(const char *ctuifont_path, const char **image_paths, 
   long glyph_start_pos = ftell(fp);
   int left, right, top, bottom, page;
   uint32_t codepoint;
-  while (fscanf(fp, "%d %d %d %d %d %u", &left, &right, &top, &bottom, &page, &codepoint) == 6) {
+  while (fscanf(fp, "%d %d %d %d %d %u", &left, &right, &top, &bottom, &page,
+                &codepoint) == 6) {
     // Skip rest of line. (comments)
     int c;
-    while ((c = fgetc(fp)) != EOF && c != '\n');
+    while ((c = fgetc(fp)) != EOF && c != '\n')
+      ;
     glyph_count++;
   }
 
@@ -234,10 +240,12 @@ CTUI_Font *CTUI_createFont(const char *ctuifont_path, const char **image_paths, 
   fseek(fp, glyph_start_pos, SEEK_SET);
   font->_max_map_offset = 0;
 
-  while (fscanf(fp, "%d %d %d %d %d %u", &left, &right, &top, &bottom, &page, &codepoint) == 6) {
+  while (fscanf(fp, "%d %d %d %d %d %u", &left, &right, &top, &bottom, &page,
+                &codepoint) == 6) {
     // Skip rest of line. (comments)
     int c;
-    while ((c = fgetc(fp)) != EOF && c != '\n');
+    while ((c = fgetc(fp)) != EOF && c != '\n')
+      ;
 
     CTUI_Glyph glyph = {0};
     glyph._codepoint = codepoint;
@@ -353,7 +361,8 @@ int CTUI_getIsWindow(CTUI_Console *console) {
 }
 
 int CTUI_getIsFullscreen(CTUI_Console *console) {
-  if (console->_platform != NULL && console->_platform->getIsFullscreen != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->getIsFullscreen != NULL) {
     return console->_platform->getIsFullscreen(console);
   }
   return 0;
@@ -364,7 +373,8 @@ int CTUI_getHasViewport(CTUI_Console *console) {
 }
 
 CTUI_DVector2 CTUI_getCursorViewportPos(CTUI_Console *console) {
-  if (console->_platform != NULL && console->_platform->getCursorViewportPos != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->getCursorViewportPos != NULL) {
     return console->_platform->getCursorViewportPos(console);
   }
   CTUI_DVector2 result = {0, 0};
@@ -372,7 +382,8 @@ CTUI_DVector2 CTUI_getCursorViewportPos(CTUI_Console *console) {
 }
 
 CTUI_DVector2 CTUI_getCursorTilePos(CTUI_Console *console) {
-  if (console->_platform != NULL && console->_platform->getCursorTilePos != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->getCursorTilePos != NULL) {
     return console->_platform->getCursorTilePos(console);
   }
   CTUI_DVector2 result = {0, 0};
@@ -380,7 +391,8 @@ CTUI_DVector2 CTUI_getCursorTilePos(CTUI_Console *console) {
 }
 
 int CTUI_getMouseButton(CTUI_Console *console, CTUI_MouseButton button) {
-  if (console->_platform != NULL && console->_platform->getMouseButton != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->getMouseButton != NULL) {
     return console->_platform->getMouseButton(console, button);
   }
   return 0;
@@ -393,8 +405,10 @@ int CTUI_getKeyState(CTUI_Console *console, CTUI_Key key) {
   return 0;
 }
 
-void CTUI_transformViewport(CTUI_Console *console, CTUI_FVector2 translation, CTUI_FVector2 scale) {
-  if (console->_platform != NULL && console->_platform->transformViewport != NULL) {
+void CTUI_transformViewport(CTUI_Console *console, CTUI_FVector2 translation,
+                            CTUI_FVector2 scale) {
+  if (console->_platform != NULL &&
+      console->_platform->transformViewport != NULL) {
     console->_platform->transformViewport(console, translation, scale);
   }
 }
@@ -406,13 +420,15 @@ void CTUI_resetViewport(CTUI_Console *console) {
 }
 
 void CTUI_setWindowPixelWh(CTUI_Console *console, CTUI_IVector2 pixel_wh) {
-  if (console->_platform != NULL && console->_platform->setWindowPixelWh != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->setWindowPixelWh != NULL) {
     console->_platform->setWindowPixelWh(console, pixel_wh);
   }
 }
 
 CTUI_IVector2 CTUI_getWindowPixelWh(CTUI_Console *console) {
-  if (console->_platform != NULL && console->_platform->getWindowPixelWh != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->getWindowPixelWh != NULL) {
     return console->_platform->getWindowPixelWh(console);
   }
   CTUI_IVector2 result = {0, 0};
@@ -420,70 +436,81 @@ CTUI_IVector2 CTUI_getWindowPixelWh(CTUI_Console *console) {
 }
 
 void CTUI_setViewportTileWh(CTUI_Console *console, CTUI_SVector2 tile_wh) {
-  if (console->_platform != NULL && console->_platform->setViewportTileWh != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->setViewportTileWh != NULL) {
     console->_platform->setViewportTileWh(console, tile_wh);
   }
 }
 
 void CTUI_fitWindowPixelWhToViewportTileWh(CTUI_Console *console) {
-  if (console->_platform != NULL && console->_platform->fitWindowPixelWhToViewportTileWh != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->fitWindowPixelWhToViewportTileWh != NULL) {
     console->_platform->fitWindowPixelWhToViewportTileWh(console);
   }
 }
 
 void CTUI_fitViewportTileWhToWindowPixelWh(CTUI_Console *console) {
-  if (console->_platform != NULL && console->_platform->fitViewportTileWhToWindowPixelWh != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->fitViewportTileWhToWindowPixelWh != NULL) {
     console->_platform->fitViewportTileWhToWindowPixelWh(console);
   }
 }
 
 void CTUI_setWindowResizable(CTUI_Console *console, int resizable) {
-  if (console->_platform != NULL && console->_platform->setWindowResizable != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->setWindowResizable != NULL) {
     console->_platform->setWindowResizable(console, resizable);
   }
 }
 
 int CTUI_getWindowResizable(CTUI_Console *console) {
-  if (console->_platform != NULL && console->_platform->getWindowResizable != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->getWindowResizable != NULL) {
     return console->_platform->getWindowResizable(console);
   }
   return 0;
 }
 
 void CTUI_setWindowDecorated(CTUI_Console *console, int decorated) {
-  if (console->_platform != NULL && console->_platform->setWindowDecorated != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->setWindowDecorated != NULL) {
     console->_platform->setWindowDecorated(console, decorated);
   }
 }
 
 int CTUI_getWindowDecorated(CTUI_Console *console) {
-  if (console->_platform != NULL && console->_platform->getWindowDecorated != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->getWindowDecorated != NULL) {
     return console->_platform->getWindowDecorated(console);
   }
   return 1; // default decorated
 }
 
 void CTUI_setWindowFloating(CTUI_Console *console, int floating) {
-  if (console->_platform != NULL && console->_platform->setWindowFloating != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->setWindowFloating != NULL) {
     console->_platform->setWindowFloating(console, floating);
   }
 }
 
 int CTUI_getWindowFloating(CTUI_Console *console) {
-  if (console->_platform != NULL && console->_platform->getWindowFloating != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->getWindowFloating != NULL) {
     return console->_platform->getWindowFloating(console);
   }
   return 0;
 }
 
 void CTUI_minimizeWindow(CTUI_Console *console) {
-  if (console->_platform != NULL && console->_platform->minimizeWindow != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->minimizeWindow != NULL) {
     console->_platform->minimizeWindow(console);
   }
 }
 
 void CTUI_maximizeWindow(CTUI_Console *console) {
-  if (console->_platform != NULL && console->_platform->maximizeWindow != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->maximizeWindow != NULL) {
     console->_platform->maximizeWindow(console);
   }
 }
@@ -495,14 +522,16 @@ void CTUI_restoreWindow(CTUI_Console *console) {
 }
 
 int CTUI_getWindowMinimized(CTUI_Console *console) {
-  if (console->_platform != NULL && console->_platform->getWindowMinimized != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->getWindowMinimized != NULL) {
     return console->_platform->getWindowMinimized(console);
   }
   return 0;
 }
 
 int CTUI_getWindowMaximized(CTUI_Console *console) {
-  if (console->_platform != NULL && console->_platform->getWindowMaximized != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->getWindowMaximized != NULL) {
     return console->_platform->getWindowMaximized(console);
   }
   return 0;
@@ -515,34 +544,35 @@ void CTUI_focusWindow(CTUI_Console *console) {
 }
 
 int CTUI_getWindowFocused(CTUI_Console *console) {
-  if (console->_platform != NULL && console->_platform->getWindowFocused != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->getWindowFocused != NULL) {
     return console->_platform->getWindowFocused(console);
   }
   return 0;
 }
 
 void CTUI_requestWindowAttention(CTUI_Console *console) {
-  if (console->_platform != NULL && console->_platform->requestWindowAttention != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->requestWindowAttention != NULL) {
     console->_platform->requestWindowAttention(console);
   }
 }
 
 void CTUI_setWindowOpacity(CTUI_Console *console, float opacity) {
-  if (console->_platform != NULL && console->_platform->setWindowOpacity != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->setWindowOpacity != NULL) {
     console->_platform->setWindowOpacity(console, opacity);
   }
 }
 
 float CTUI_getWindowOpacity(CTUI_Console *console) {
-  if (console->_platform != NULL && console->_platform->getWindowOpacity != NULL) {
+  if (console->_platform != NULL &&
+      console->_platform->getWindowOpacity != NULL) {
     return console->_platform->getWindowOpacity(console);
   }
   return 1.0f;
 }
 
-// ============================================================================
-// Glyph Getters
-// ============================================================================
 CTUI_SVector2 CTUI_getGlyphTilesWh(const CTUI_Glyph *glyph) {
   return glyph->_tiles_wh;
 }
@@ -571,13 +601,16 @@ CTUI_DVector2 CTUI_getLayerTileDivWh(const CTUI_ConsoleLayer *layer) {
   return layer->_tile_div_wh;
 }
 
-void CTUI_setLayerTileDivWh(CTUI_Console *console, size_t layer_i, CTUI_DVector2 tile_div_wh) {
+void CTUI_setLayerTileDivWh(CTUI_Console *console, size_t layer_i,
+                            CTUI_DVector2 tile_div_wh) {
   if (layer_i >= console->_layer_count) {
     return;
   }
   // Ensure non-zero divisors
-  if (tile_div_wh.x == 0) tile_div_wh.x = 1;
-  if (tile_div_wh.y == 0) tile_div_wh.y = 1;
+  if (tile_div_wh.x == 0)
+    tile_div_wh.x = 1;
+  if (tile_div_wh.y == 0)
+    tile_div_wh.y = 1;
   console->_layers[layer_i]._tile_div_wh = tile_div_wh;
   // Clear layer data
   console->_layers[layer_i]._tiles_count = 0;
@@ -600,9 +633,6 @@ size_t CTUI_getLayerTilesCount(const CTUI_ConsoleLayer *layer) {
   return layer->_tiles_count;
 }
 
-// ============================================================================
-// Console Getters
-// ============================================================================
 CTUI_SVector2 CTUI_getConsoleTileWh(const CTUI_Console *console) {
   return console->_console_tile_wh;
 }

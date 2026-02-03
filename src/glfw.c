@@ -1,5 +1,6 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#include <ctui/ctui.h>
 #include <glad/gl.h>
 #include <math.h>
 #include <stddef.h>
@@ -7,16 +8,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctui/ctui.h>
 
 static const CTUI_Matrix4x4 CTUI_IDENTITY_MATRIX = {
-    .m = {1.0f, 0.0f, 0.0f, 0.0f,
-          0.0f, 1.0f, 0.0f, 0.0f,
-          0.0f, 0.0f, 1.0f, 0.0f,
-          0.0f, 0.0f, 0.0f, 1.0f}};
+    .m = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+          0.0f, 0.0f, 0.0f, 0.0f, 1.0f}};
 
 static CTUI_Matrix4x4 CTUI_createTransformMatrix(CTUI_FVector2 translation,
-                                               CTUI_FVector2 scale) {
+                                                 CTUI_FVector2 scale) {
   CTUI_Matrix4x4 result = CTUI_IDENTITY_MATRIX;
   result.m[0] = scale.x;
   result.m[5] = scale.y;
@@ -132,13 +130,14 @@ static GLuint CTUI_getOrCreateFontTexture(CTUI_GlfwGlConsole *glfw_console,
                                           CTUI_Font *font) {
   for (size_t i = 0; i < glfw_console->font_texture_count; i++) {
     if (glfw_console->font_textures[i].font == font) {
-      return glfw_console->font_textures[i].texture; // this console already has a texture for this font...
+      return glfw_console->font_textures[i]
+          .texture; // this console already has a texture for this font...
     }
   }
   GLuint texture = CTUI_createFontTexture2DArray(font);
   size_t new_count = glfw_console->font_texture_count + 1;
-  CTUI_FontTexture *new_textures =
-      realloc(glfw_console->font_textures, sizeof(CTUI_FontTexture) * new_count);
+  CTUI_FontTexture *new_textures = realloc(
+      glfw_console->font_textures, sizeof(CTUI_FontTexture) * new_count);
   if (new_textures == NULL) {
     // TODO
     glDeleteTextures(1, &texture);
@@ -146,7 +145,8 @@ static GLuint CTUI_getOrCreateFontTexture(CTUI_GlfwGlConsole *glfw_console,
   }
   glfw_console->font_textures = new_textures;
   glfw_console->font_textures[glfw_console->font_texture_count].font = font;
-  glfw_console->font_textures[glfw_console->font_texture_count].texture = texture;
+  glfw_console->font_textures[glfw_console->font_texture_count].texture =
+      texture;
   glfw_console->font_texture_count = new_count;
   return texture;
 }
@@ -155,8 +155,10 @@ static void CTUI_updateBaseTransform(CTUI_GlfwGlConsole *glfw_console) {
   CTUI_Console *console = &glfw_console->base;
   int win_w, win_h;
   glfwGetFramebufferSize(glfw_console->window, &win_w, &win_h);
-  double grid_pixel_w = (double)console->_console_tile_wh.x * glfw_console->tile_pixel_wh.x;
-  double grid_pixel_h = (double)console->_console_tile_wh.y * glfw_console->tile_pixel_wh.y;
+  double grid_pixel_w =
+      (double)console->_console_tile_wh.x * glfw_console->tile_pixel_wh.x;
+  double grid_pixel_h =
+      (double)console->_console_tile_wh.y * glfw_console->tile_pixel_wh.y;
   float scale_x = (float)(grid_pixel_w / (double)win_w);
   float scale_y = (float)(grid_pixel_h / (double)win_h);
   float offset_x = -1.0f + scale_x;
@@ -168,7 +170,8 @@ static void CTUI_updateBaseTransform(CTUI_GlfwGlConsole *glfw_console) {
   glfw_console->base_transform.m[13] = offset_y;
 }
 
-static CTUI_Matrix4x4 CTUI_getCombinedTransform(CTUI_GlfwGlConsole *glfw_console) {
+static CTUI_Matrix4x4
+CTUI_getCombinedTransform(CTUI_GlfwGlConsole *glfw_console) {
   CTUI_Matrix4x4 viewport = CTUI_createTransformMatrix(
       glfw_console->viewport_translation, glfw_console->viewport_scale);
   CTUI_Matrix4x4 result;
@@ -176,8 +179,8 @@ static CTUI_Matrix4x4 CTUI_getCombinedTransform(CTUI_GlfwGlConsole *glfw_console
     for (int row = 0; row < 4; row++) {
       result.m[col * 4 + row] = 0.0f;
       for (int k = 0; k < 4; k++) {
-        result.m[col * 4 + row] +=
-            viewport.m[k * 4 + row] * glfw_console->base_transform.m[col * 4 + k];
+        result.m[col * 4 + row] += viewport.m[k * 4 + row] *
+                                   glfw_console->base_transform.m[col * 4 + k];
       }
     }
   }
@@ -205,11 +208,13 @@ static void CTUI_refreshGlfwGlConsole(CTUI_Console *console) {
     }
     CTUI_Font *font = layer->_font;
     CTUI_FVector2 tile_screen_wh = (CTUI_FVector2){
-        .x = 2.0f / (float)((double)console->_console_tile_wh.x * layer->_tile_div_wh.x),
-        .y = 2.0f / (float)((double)console->_console_tile_wh.y * layer->_tile_div_wh.y)};
+        .x = 2.0f / (float)((double)console->_console_tile_wh.x *
+                            layer->_tile_div_wh.x),
+        .y = 2.0f / (float)((double)console->_console_tile_wh.y *
+                            layer->_tile_div_wh.y)};
     if (buffer->vertex_capacity < layer->_tiles_count * 6) {
-      CTUI_GlVertex *new_vertex_data =
-          realloc(buffer->vertex_data, layer->_tiles_count * 6 * sizeof(CTUI_GlVertex));
+      CTUI_GlVertex *new_vertex_data = realloc(
+          buffer->vertex_data, layer->_tiles_count * 6 * sizeof(CTUI_GlVertex));
       if (new_vertex_data == NULL) {
         // TODO
         continue;
@@ -242,48 +247,84 @@ static void CTUI_refreshGlfwGlConsole(CTUI_Console *console) {
       v0->u = glyph->_tex_coords.s;
       v0->v = glyph->_tex_coords.p;
       v0->page = glyph->_tex_coords.page;
-      v0->fg[0] = fg_r; v0->fg[1] = fg_g; v0->fg[2] = fg_b; v0->fg[3] = fg_a;
-      v0->bg[0] = bg_r; v0->bg[1] = bg_g; v0->bg[2] = bg_b; v0->bg[3] = bg_a;
+      v0->fg[0] = fg_r;
+      v0->fg[1] = fg_g;
+      v0->fg[2] = fg_b;
+      v0->fg[3] = fg_a;
+      v0->bg[0] = bg_r;
+      v0->bg[1] = bg_g;
+      v0->bg[2] = bg_b;
+      v0->bg[3] = bg_a;
       CTUI_GlVertex *v1 = &buffer->vertex_data[buffer->vertex_count++];
       v1->x = right_x;
       v1->y = top_y;
       v1->u = glyph->_tex_coords.t;
       v1->v = glyph->_tex_coords.p;
       v1->page = glyph->_tex_coords.page;
-      v1->fg[0] = fg_r; v1->fg[1] = fg_g; v1->fg[2] = fg_b; v1->fg[3] = fg_a;
-      v1->bg[0] = bg_r; v1->bg[1] = bg_g; v1->bg[2] = bg_b; v1->bg[3] = bg_a;
+      v1->fg[0] = fg_r;
+      v1->fg[1] = fg_g;
+      v1->fg[2] = fg_b;
+      v1->fg[3] = fg_a;
+      v1->bg[0] = bg_r;
+      v1->bg[1] = bg_g;
+      v1->bg[2] = bg_b;
+      v1->bg[3] = bg_a;
       CTUI_GlVertex *v2 = &buffer->vertex_data[buffer->vertex_count++];
       v2->x = left_x;
       v2->y = bottom_y;
       v2->u = glyph->_tex_coords.s;
       v2->v = glyph->_tex_coords.q;
       v2->page = glyph->_tex_coords.page;
-      v2->fg[0] = fg_r; v2->fg[1] = fg_g; v2->fg[2] = fg_b; v2->fg[3] = fg_a;
-      v2->bg[0] = bg_r; v2->bg[1] = bg_g; v2->bg[2] = bg_b; v2->bg[3] = bg_a;
+      v2->fg[0] = fg_r;
+      v2->fg[1] = fg_g;
+      v2->fg[2] = fg_b;
+      v2->fg[3] = fg_a;
+      v2->bg[0] = bg_r;
+      v2->bg[1] = bg_g;
+      v2->bg[2] = bg_b;
+      v2->bg[3] = bg_a;
       CTUI_GlVertex *v3 = &buffer->vertex_data[buffer->vertex_count++];
       v3->x = right_x;
       v3->y = top_y;
       v3->u = glyph->_tex_coords.t;
       v3->v = glyph->_tex_coords.p;
       v3->page = glyph->_tex_coords.page;
-      v3->fg[0] = fg_r; v3->fg[1] = fg_g; v3->fg[2] = fg_b; v3->fg[3] = fg_a;
-      v3->bg[0] = bg_r; v3->bg[1] = bg_g; v3->bg[2] = bg_b; v3->bg[3] = bg_a;
+      v3->fg[0] = fg_r;
+      v3->fg[1] = fg_g;
+      v3->fg[2] = fg_b;
+      v3->fg[3] = fg_a;
+      v3->bg[0] = bg_r;
+      v3->bg[1] = bg_g;
+      v3->bg[2] = bg_b;
+      v3->bg[3] = bg_a;
       CTUI_GlVertex *v4 = &buffer->vertex_data[buffer->vertex_count++];
       v4->x = right_x;
       v4->y = bottom_y;
       v4->u = glyph->_tex_coords.t;
       v4->v = glyph->_tex_coords.q;
       v4->page = glyph->_tex_coords.page;
-      v4->fg[0] = fg_r; v4->fg[1] = fg_g; v4->fg[2] = fg_b; v4->fg[3] = fg_a;
-      v4->bg[0] = bg_r; v4->bg[1] = bg_g; v4->bg[2] = bg_b; v4->bg[3] = bg_a;
+      v4->fg[0] = fg_r;
+      v4->fg[1] = fg_g;
+      v4->fg[2] = fg_b;
+      v4->fg[3] = fg_a;
+      v4->bg[0] = bg_r;
+      v4->bg[1] = bg_g;
+      v4->bg[2] = bg_b;
+      v4->bg[3] = bg_a;
       CTUI_GlVertex *v5 = &buffer->vertex_data[buffer->vertex_count++];
       v5->x = left_x;
       v5->y = bottom_y;
       v5->u = glyph->_tex_coords.s;
       v5->v = glyph->_tex_coords.q;
       v5->page = glyph->_tex_coords.page;
-      v5->fg[0] = fg_r; v5->fg[1] = fg_g; v5->fg[2] = fg_b; v5->fg[3] = fg_a;
-      v5->bg[0] = bg_r; v5->bg[1] = bg_g; v5->bg[2] = bg_b; v5->bg[3] = bg_a;
+      v5->fg[0] = fg_r;
+      v5->fg[1] = fg_g;
+      v5->fg[2] = fg_b;
+      v5->fg[3] = fg_a;
+      v5->bg[0] = bg_r;
+      v5->bg[1] = bg_g;
+      v5->bg[2] = bg_b;
+      v5->bg[3] = bg_a;
     }
   }
   if (console->_fill_bg_set) {
@@ -300,7 +341,8 @@ static void CTUI_refreshGlfwGlConsole(CTUI_Console *console) {
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glUseProgram(glfw_console->shader);
   CTUI_Matrix4x4 transform = CTUI_getCombinedTransform(glfw_console);
-  glUniformMatrix4fv(glfw_console->transform_uniform_loc, 1, GL_FALSE, transform.m);
+  glUniformMatrix4fv(glfw_console->transform_uniform_loc, 1, GL_FALSE,
+                     transform.m);
   glBindVertexArray(glfw_console->vao);
   for (size_t buffer_i = 0; buffer_i < glfw_console->buffer_count; buffer_i++) {
     CTUI_GlfwGlBuffer *buffer = &glfw_console->buffers[buffer_i];
@@ -482,12 +524,14 @@ static void CTUI_pollEventsGlfwGlConsole(CTUI_Console *console) {
     ev.type = CTUI_EVENT_CLOSE;
     ev.console = console;
     CTUI_pushEvent(console->_ctx, &ev);
-    glfwSetWindowShouldClose(glfw_console->window, GLFW_FALSE); // so we dont spam events...
+    glfwSetWindowShouldClose(glfw_console->window,
+                             GLFW_FALSE); // so we dont spam events...
   }
 }
 
-static void CTUI_transformViewportGlfwGl(CTUI_Console *console, CTUI_FVector2 translation,
-                            CTUI_FVector2 scale) {
+static void CTUI_transformViewportGlfwGl(CTUI_Console *console,
+                                         CTUI_FVector2 translation,
+                                         CTUI_FVector2 scale) {
   CTUI_GlfwGlConsole *glfw_console = (CTUI_GlfwGlConsole *)console;
   glfw_console->viewport_translation = translation;
   glfw_console->viewport_scale = scale;
@@ -510,22 +554,23 @@ static CTUI_DVector2 CTUI_getCursorTilePosGlfwGl(CTUI_Console *console) {
   CTUI_GlfwGlConsole *glfw_console = (CTUI_GlfwGlConsole *)console;
   double px, py;
   glfwGetCursorPos(glfw_console->window, &px, &py);
-  
+
   // Convert to tile coordinates
   double tile_x = px / (double)glfw_console->tile_pixel_wh.x;
   double tile_y = py / (double)glfw_console->tile_pixel_wh.y;
-  
-  // Apply inverse viewport transform (translation is in normalized coords, scale is direct)
-  // The viewport transform in the shader is: pos * scale + translation
-  // So inverse is: (pos - translation) / scale
-  // But translation is in NDC (-1 to 1), we need to convert
+
+  // Apply inverse viewport transform (translation is in normalized coords,
+  // scale is direct) The viewport transform in the shader is: pos * scale +
+  // translation So inverse is: (pos - translation) / scale But translation is
+  // in NDC (-1 to 1), we need to convert
   double console_w = (double)console->_console_tile_wh.x;
   double console_h = (double)console->_console_tile_wh.y;
-  
+
   // Translation in NDC to translation in tiles
   double trans_tiles_x = glfw_console->viewport_translation.x * console_w / 2.0;
-  double trans_tiles_y = -glfw_console->viewport_translation.y * console_h / 2.0;
-  
+  double trans_tiles_y =
+      -glfw_console->viewport_translation.y * console_h / 2.0;
+
   CTUI_DVector2 result;
   result.x = (tile_x - trans_tiles_x) / (double)glfw_console->viewport_scale.x;
   result.y = (tile_y - trans_tiles_y) / (double)glfw_console->viewport_scale.y;
@@ -545,7 +590,8 @@ static int CTUI_getKeyStateGlfwGl(CTUI_Console *console, int key) {
   return glfwGetKey(glfw_console->window, key) == GLFW_PRESS;
 }
 
-static void CTUI_setWindowPixelWhGlfwGl(CTUI_Console *console, CTUI_IVector2 pixel_wh) {
+static void CTUI_setWindowPixelWhGlfwGl(CTUI_Console *console,
+                                        CTUI_IVector2 pixel_wh) {
   CTUI_GlfwGlConsole *glfw_console = (CTUI_GlfwGlConsole *)console;
   glfwSetWindowSize(glfw_console->window, pixel_wh.x, pixel_wh.y);
   if (!glfw_console->is_visible) {
@@ -561,14 +607,17 @@ static CTUI_IVector2 CTUI_getWindowPixelWhGlfwGl(CTUI_Console *console) {
   return result;
 }
 
-static void CTUI_setViewportTileWhGlfwGl(CTUI_Console *console, CTUI_SVector2 tile_wh) {
+static void CTUI_setViewportTileWhGlfwGl(CTUI_Console *console,
+                                         CTUI_SVector2 tile_wh) {
   console->_console_tile_wh = tile_wh;
 }
 
 static void CTUI_fitWindowPixelWhToViewportTileWhGlfwGl(CTUI_Console *console) {
   CTUI_GlfwGlConsole *glfw_console = (CTUI_GlfwGlConsole *)console;
-  int win_w = (int)((double)console->_console_tile_wh.x * glfw_console->tile_pixel_wh.x);
-  int win_h = (int)((double)console->_console_tile_wh.y * glfw_console->tile_pixel_wh.y);
+  int win_w = (int)((double)console->_console_tile_wh.x *
+                    glfw_console->tile_pixel_wh.x);
+  int win_h = (int)((double)console->_console_tile_wh.y *
+                    glfw_console->tile_pixel_wh.y);
   glfwSetWindowSize(glfw_console->window, win_w, win_h);
   if (!glfw_console->is_visible) {
     glfwShowWindow(glfw_console->window);
@@ -587,18 +636,23 @@ static void CTUI_fitViewportTileWhToWindowPixelWhGlfwGl(CTUI_Console *console) {
   glfwGetWindowSize(glfw_console->window, &win_w, &win_h);
   size_t new_tiles_x = (size_t)((double)win_w / glfw_console->tile_pixel_wh.x);
   size_t new_tiles_y = (size_t)((double)win_h / glfw_console->tile_pixel_wh.y);
-  if (new_tiles_x < 1) new_tiles_x = 1;
-  if (new_tiles_y < 1) new_tiles_y = 1;
-  if (console->_console_tile_wh.x != new_tiles_x || console->_console_tile_wh.y != new_tiles_y) {
+  if (new_tiles_x < 1)
+    new_tiles_x = 1;
+  if (new_tiles_y < 1)
+    new_tiles_y = 1;
+  if (console->_console_tile_wh.x != new_tiles_x ||
+      console->_console_tile_wh.y != new_tiles_y) {
     console->_console_tile_wh.x = new_tiles_x;
     console->_console_tile_wh.y = new_tiles_y;
     CTUI_updateBaseTransform(glfw_console);
   }
 }
 
-static void CTUI_setWindowResizableGlfwGl(CTUI_Console *console, int resizable) {
+static void CTUI_setWindowResizableGlfwGl(CTUI_Console *console,
+                                          int resizable) {
   CTUI_GlfwGlConsole *glfw_console = (CTUI_GlfwGlConsole *)console;
-  glfwSetWindowAttrib(glfw_console->window, GLFW_RESIZABLE, resizable ? GLFW_TRUE : GLFW_FALSE);
+  glfwSetWindowAttrib(glfw_console->window, GLFW_RESIZABLE,
+                      resizable ? GLFW_TRUE : GLFW_FALSE);
 }
 
 static int CTUI_getWindowResizableGlfwGl(CTUI_Console *console) {
@@ -611,9 +665,11 @@ static int CTUI_getIsFullscreenGlfwGl(CTUI_Console *console) {
   return glfw_console->is_fullscreen;
 }
 
-static void CTUI_setWindowDecoratedGlfwGl(CTUI_Console *console, int decorated) {
+static void CTUI_setWindowDecoratedGlfwGl(CTUI_Console *console,
+                                          int decorated) {
   CTUI_GlfwGlConsole *glfw_console = (CTUI_GlfwGlConsole *)console;
-  glfwSetWindowAttrib(glfw_console->window, GLFW_DECORATED, decorated ? GLFW_TRUE : GLFW_FALSE);
+  glfwSetWindowAttrib(glfw_console->window, GLFW_DECORATED,
+                      decorated ? GLFW_TRUE : GLFW_FALSE);
 }
 
 static int CTUI_getWindowDecoratedGlfwGl(CTUI_Console *console) {
@@ -623,7 +679,8 @@ static int CTUI_getWindowDecoratedGlfwGl(CTUI_Console *console) {
 
 static void CTUI_setWindowFloatingGlfwGl(CTUI_Console *console, int floating) {
   CTUI_GlfwGlConsole *glfw_console = (CTUI_GlfwGlConsole *)console;
-  glfwSetWindowAttrib(glfw_console->window, GLFW_FLOATING, floating ? GLFW_TRUE : GLFW_FALSE);
+  glfwSetWindowAttrib(glfw_console->window, GLFW_FLOATING,
+                      floating ? GLFW_TRUE : GLFW_FALSE);
 }
 
 static int CTUI_getWindowFloatingGlfwGl(CTUI_Console *console) {
@@ -696,8 +753,10 @@ static CTUI_TuiPlatform CTUI_PLATFORM_GLFW_GL = {
     .setWindowPixelWh = CTUI_setWindowPixelWhGlfwGl,
     .getWindowPixelWh = CTUI_getWindowPixelWhGlfwGl,
     .setViewportTileWh = CTUI_setViewportTileWhGlfwGl,
-    .fitWindowPixelWhToViewportTileWh = CTUI_fitWindowPixelWhToViewportTileWhGlfwGl,
-    .fitViewportTileWhToWindowPixelWh = CTUI_fitViewportTileWhToWindowPixelWhGlfwGl,
+    .fitWindowPixelWhToViewportTileWh =
+        CTUI_fitWindowPixelWhToViewportTileWhGlfwGl,
+    .fitViewportTileWhToWindowPixelWh =
+        CTUI_fitViewportTileWhToWindowPixelWhGlfwGl,
     .setWindowResizable = CTUI_setWindowResizableGlfwGl,
     .getWindowResizable = CTUI_getWindowResizableGlfwGl,
     .getIsFullscreen = CTUI_getIsFullscreenGlfwGl,
@@ -716,12 +775,10 @@ static CTUI_TuiPlatform CTUI_PLATFORM_GLFW_GL = {
     .setWindowOpacity = CTUI_setWindowOpacityGlfwGl,
     .getWindowOpacity = CTUI_getWindowOpacityGlfwGl};
 
-CTUI_Console *CTUI_createGlfwOpengl33FakeTerminal(CTUI_Context *ctx,
-                                          CTUI_DVector2 tile_pixel_wh,
-                                          size_t layer_count,
-                                          const CTUI_LayerInfo *layer_infos,
-                                          CTUI_ColorMode color_mode,
-                                          const char *title) {
+CTUI_Console *CTUI_createGlfwOpengl33FakeTerminal(
+    CTUI_Context *ctx, CTUI_DVector2 tile_pixel_wh, size_t layer_count,
+    const CTUI_LayerInfo *layer_infos, CTUI_ColorMode color_mode,
+    const char *title) {
   if (glfwInit() == GLFW_FALSE) {
     // TODO
     return NULL;
@@ -767,7 +824,8 @@ CTUI_Console *CTUI_createGlfwOpengl33FakeTerminal(CTUI_Context *ctx,
   gladLoadGL(glfwGetProcAddress);
 
   // Create shader program
-  glfw_console->shader = CTUI_createGlProgram(&glfw_console->transform_uniform_loc);
+  glfw_console->shader =
+      CTUI_createGlProgram(&glfw_console->transform_uniform_loc);
 
   // Create VAO and buffers
   glGenVertexArrays(1, &glfw_console->vao);
@@ -806,8 +864,10 @@ CTUI_Console *CTUI_createGlfwOpengl33FakeTerminal(CTUI_Context *ctx,
 
   for (size_t i = 0; i < layer_count; ++i) {
     console->_layers[i]._tile_div_wh = layer_infos[i].tile_div_wh;
-    if (console->_layers[i]._tile_div_wh.x == 0) console->_layers[i]._tile_div_wh.x = 1.0;
-    if (console->_layers[i]._tile_div_wh.y == 0) console->_layers[i]._tile_div_wh.y = 1.0;
+    if (console->_layers[i]._tile_div_wh.x == 0)
+      console->_layers[i]._tile_div_wh.x = 1.0;
+    if (console->_layers[i]._tile_div_wh.y == 0)
+      console->_layers[i]._tile_div_wh.y = 1.0;
     console->_layers[i]._font = layer_infos[i].font;
     console->_layers[i]._tiles = NULL;
     console->_layers[i]._tiles_count = 0;
@@ -835,7 +895,8 @@ void CTUI_hideWindow(CTUI_Console *console) {
   }
 }
 
-void CTUI_setWindowedTileWh(CTUI_Console *console, CTUI_SVector2 console_tile_wh) {
+void CTUI_setWindowedTileWh(CTUI_Console *console,
+                            CTUI_SVector2 console_tile_wh) {
   if (console->_is_real_terminal) {
     return;
   }
@@ -843,13 +904,16 @@ void CTUI_setWindowedTileWh(CTUI_Console *console, CTUI_SVector2 console_tile_wh
 
   // If was fullscreen, exit fullscreen
   if (glfw_console->is_fullscreen) {
-    glfwSetWindowMonitor(glfw_console->window, NULL, 100, 100,
-                         (int)((double)console_tile_wh.x * glfw_console->tile_pixel_wh.x),
-                         (int)((double)console_tile_wh.y * glfw_console->tile_pixel_wh.y), 0);
+    glfwSetWindowMonitor(
+        glfw_console->window, NULL, 100, 100,
+        (int)((double)console_tile_wh.x * glfw_console->tile_pixel_wh.x),
+        (int)((double)console_tile_wh.y * glfw_console->tile_pixel_wh.y), 0);
     glfw_console->is_fullscreen = 0;
   } else {
-    int win_w = (int)((double)console_tile_wh.x * glfw_console->tile_pixel_wh.x);
-    int win_h = (int)((double)console_tile_wh.y * glfw_console->tile_pixel_wh.y);
+    int win_w =
+        (int)((double)console_tile_wh.x * glfw_console->tile_pixel_wh.x);
+    int win_h =
+        (int)((double)console_tile_wh.y * glfw_console->tile_pixel_wh.y);
     glfwSetWindowSize(glfw_console->window, win_w, win_h);
   }
 
@@ -880,8 +944,10 @@ void CTUI_setWindowedFullscreen(CTUI_Console *console) {
   const GLFWvidmode *mode = glfwGetVideoMode(monitor);
 
   // Calculate how many tiles fit in fullscreen
-  size_t tiles_x = (size_t)((double)mode->width / glfw_console->tile_pixel_wh.x);
-  size_t tiles_y = (size_t)((double)mode->height / glfw_console->tile_pixel_wh.y);
+  size_t tiles_x =
+      (size_t)((double)mode->width / glfw_console->tile_pixel_wh.x);
+  size_t tiles_y =
+      (size_t)((double)mode->height / glfw_console->tile_pixel_wh.y);
 
   console->_console_tile_wh.x = tiles_x;
   console->_console_tile_wh.y = tiles_y;

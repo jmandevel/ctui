@@ -1,3 +1,4 @@
+#include <ctui/ctui.h>
 #include <locale.h>
 #include <ncurses.h>
 #include <stddef.h>
@@ -5,7 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctui/ctui.h>
 
 typedef struct CTUI_NcursesConsole {
   CTUI_Console base;
@@ -186,7 +186,8 @@ static void CTUI_pollEventsNcurses(CTUI_Console *console) {
         CTUI_Event cev = {0};
         cev.type = CTUI_EVENT_CURSOR_POS;
         cev.console = console;
-        cev.data.cursor_pos.viewport_xy.x = 0.0; // NOTE: viewport pos is (0,0) because has no viewport
+        cev.data.cursor_pos.viewport_xy.x =
+            0.0; // NOTE: viewport pos is (0,0) because has no viewport
         cev.data.cursor_pos.viewport_xy.y = 0.0;
         cev.data.cursor_pos.tile_xy.x = (double)event.x;
         cev.data.cursor_pos.tile_xy.y = (double)event.y;
