@@ -577,6 +577,17 @@ void CTUI_hideWindow(CTUI_Console *console) {
   }
 }
 
+void CTUI_showWindow(CTUI_Console *console) {
+  if (console->_is_real_terminal) {
+    return;
+  }
+  CTUI_GlfwConsole *glfw_console = (CTUI_GlfwConsole *)console;
+  if (glfw_console->window && !glfw_console->is_visible) {
+    glfwShowWindow(glfw_console->window);
+    glfw_console->is_visible = 1;
+  }
+}
+
 void CTUI_setWindowedTileWh(CTUI_Console *console, CTUI_SVector2 console_tile_wh) {
   if (console->_is_real_terminal) {
     return;

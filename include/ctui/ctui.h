@@ -485,6 +485,8 @@ int CTUI_getIsWindow(CTUI_Console *console);
 
 void CTUI_hideWindow(CTUI_Console *console);
 
+void CTUI_showWindow(CTUI_Console *console);
+
 void CTUI_setWindowedTileWh(CTUI_Console *console,
                             CTUI_SVector2 console_tile_wh);
 
