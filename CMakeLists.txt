@@ -11,5 +11,3 @@ target_include_directories(ctui PUBLIC include ${CURSES_INCLUDE_DIRS} ${GLFW_INC
 target_link_libraries(ctui PUBLIC ${CURSES_LIBRARIES} ${GLFW_LIBRARIES} m)
 
 add_subdirectory(src)
-
-add_subdirectory(sandbox)
