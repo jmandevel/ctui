@@ -57,14 +57,14 @@ static void CTUI_refreshNcurses(CTUI_Console *console) {
   if (console->_fill_bg_set) {
     int bgidx;
     switch (console->_effective_color_mode) {
-    case CTUI_COLORMODE_256:
-      bgidx = console->_fill_bg_color.palette256;
+    case CTUIC_ANSI256:
+      bgidx = (int)CTUI_convertToAnsi256(console->_fill_bg_color);
       break;
-    case CTUI_COLORMODE_16:
-      bgidx = console->_fill_bg_color.palette16;
+    case CTUIC_ANSI16:
+      bgidx = (int)CTUI_convertToAnsi16(console->_fill_bg_color);
       break;
     default:
-      bgidx = console->_fill_bg_color.palette8;
+      bgidx = (int)CTUI_convertToAnsi8(console->_fill_bg_color);
       break;
     }
     if (has_colors()) {
@@ -86,17 +86,17 @@ static void CTUI_refreshNcurses(CTUI_Console *console) {
       CTUI_ConsoleTile *tile = &layer->_tiles[tile_i];
       int fg, bg;
       switch (console->_effective_color_mode) {
-      case CTUI_COLORMODE_256:
-        fg = tile->_fg.palette256;
-        bg = tile->_bg.palette256;
+      case CTUIC_ANSI256:
+        fg = (int)CTUI_convertToAnsi256(tile->_fg);
+        bg = (int)CTUI_convertToAnsi256(tile->_bg);
         break;
-      case CTUI_COLORMODE_16:
-        fg = tile->_fg.palette16;
-        bg = tile->_bg.palette16;
+      case CTUIC_ANSI16:
+        fg = (int)CTUI_convertToAnsi16(tile->_fg);
+        bg = (int)CTUI_convertToAnsi16(tile->_bg);
         break;
       default:
-        fg = tile->_fg.palette8;
-        bg = tile->_bg.palette8;
+        fg = (int)CTUI_convertToAnsi8(tile->_fg);
+        bg = (int)CTUI_convertToAnsi8(tile->_bg);
         break;
       }
       if (has_colors()) {
@@ -263,23 +263,23 @@ CTUI_Console *CTUI_createNcursesRealTerminal(CTUI_Context *ctx, int layer_count,
 #ifdef NCURSES_MOUSE_VERSION
   mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
 #endif
-  CTUI_ColorMode best_mode = CTUI_COLORMODE_8;
+  CTUI_ColorMode best_mode = CTUIC_ANSI8;
   if (has_colors()) {
     start_color();
     if (COLORS >= 256) {
-      best_mode = CTUI_COLORMODE_256;
+      best_mode = CTUIC_ANSI256;
       use_default_colors();
     } else if (COLORS >= 16) {
-      best_mode = CTUI_COLORMODE_16;
+      best_mode = CTUIC_ANSI16;
     } else if (COLORS >= 8) {
-      best_mode = CTUI_COLORMODE_8;
+      best_mode = CTUIC_ANSI8;
     }
   }
   if (best_mode > color_mode)
     best_mode = color_mode;
-  int maxc = (best_mode == CTUI_COLORMODE_256)  ? 256
-             : (best_mode == CTUI_COLORMODE_16) ? 16
-                                                : 8;
+  int maxc = (best_mode == CTUIC_ANSI256)  ? 256
+             : (best_mode == CTUIC_ANSI16) ? 16
+                                           : 8;
   for (int i = 0; i < maxc && i < COLORS; ++i) {
     init_pair(i, i, -1);
   }

@@ -239,14 +239,16 @@ static void CTUI_gl33Render(CTUI_Renderer *renderer, CTUI_Console *console) {
         continue;
       }
       CTUI_Stpqp tex_coords = CTUI_getGlyphTexCoords(glyph);
-      float fg_r = (float)tile->_fg.full.r / 255.0f;
-      float fg_g = (float)tile->_fg.full.g / 255.0f;
-      float fg_b = (float)tile->_fg.full.b / 255.0f;
-      float fg_a = (float)tile->_fg.full.a / 255.0f;
-      float bg_r = (float)tile->_bg.full.r / 255.0f;
-      float bg_g = (float)tile->_bg.full.g / 255.0f;
-      float bg_b = (float)tile->_bg.full.b / 255.0f;
-      float bg_a = (float)tile->_bg.full.a / 255.0f;
+      CTUI_ColorRgba32 fg_rgba = CTUI_convertToRgba32(tile->_fg);
+      CTUI_ColorRgba32 bg_rgba = CTUI_convertToRgba32(tile->_bg);
+      float fg_r = (float)fg_rgba.r / 255.0f;
+      float fg_g = (float)fg_rgba.g / 255.0f;
+      float fg_b = (float)fg_rgba.b / 255.0f;
+      float fg_a = (float)fg_rgba.a / 255.0f;
+      float bg_r = (float)bg_rgba.r / 255.0f;
+      float bg_g = (float)bg_rgba.g / 255.0f;
+      float bg_b = (float)bg_rgba.b / 255.0f;
+      float bg_a = (float)bg_rgba.a / 255.0f;
       CTUI_GL33Vertex *v0 = &buffer->vertex_data[buffer->vertex_count++];
       v0->x = left_x;
       v0->y = top_y;
@@ -334,10 +336,11 @@ static void CTUI_gl33Render(CTUI_Renderer *renderer, CTUI_Console *console) {
     }
   }
   if (console->_fill_bg_set) {
-    float r = (float)console->_fill_bg_color.full.r / 255.0f;
-    float g = (float)console->_fill_bg_color.full.g / 255.0f;
-    float b = (float)console->_fill_bg_color.full.b / 255.0f;
-    float a = (float)console->_fill_bg_color.full.a / 255.0f;
+    CTUI_ColorRgba32 fill_rgba = CTUI_convertToRgba32(console->_fill_bg_color);
+    float r = (float)fill_rgba.r / 255.0f;
+    float g = (float)fill_rgba.g / 255.0f;
+    float b = (float)fill_rgba.b / 255.0f;
+    float a = (float)fill_rgba.a / 255.0f;
     glClearColor(r, g, b, a);
   } else {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
