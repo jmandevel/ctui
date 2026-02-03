@@ -25,6 +25,30 @@ int CTUI_getHasRealTerminal() {
 #endif
 }
 
+int CTUI_rendererInit(CTUI_Renderer *r) {
+  return r->vtable->init ? r->vtable->init(r) : 0;
+}
+
+void CTUI_rendererDestroy(CTUI_Renderer *r) {
+  if (r->vtable->destroy)
+    r->vtable->destroy(r);
+}
+
+void CTUI_rendererResize(CTUI_Renderer *r, int w, int h) {
+  if (r->vtable->resize)
+    r->vtable->resize(r, w, h);
+}
+
+void CTUI_rendererRender(CTUI_Renderer *r, CTUI_Console *c) {
+  if (r->vtable->render)
+    r->vtable->render(r, c);
+}
+
+void CTUI_rendererMakeCurrent(CTUI_Renderer *r) {
+  if (r->vtable->makeCurrent)
+    r->vtable->makeCurrent(r);
+}
+
 static void CTUI_initEventQueue(CTUI_Context *ctx) {
   ctx->_event_queue_capacity = 32;
   ctx->_event_queue = calloc(ctx->_event_queue_capacity, sizeof(CTUI_Event));
@@ -483,7 +507,7 @@ int CTUI_getWindowDecorated(CTUI_Console *console) {
       console->_platform->getWindowDecorated != NULL) {
     return console->_platform->getWindowDecorated(console);
   }
-  return 1; // default decorated
+  return 1;
 }
 
 void CTUI_setWindowFloating(CTUI_Console *console, int floating) {
@@ -625,7 +649,6 @@ void CTUI_setLayerFont(CTUI_Console *console, size_t layer_i, CTUI_Font *font) {
     return;
   }
   console->_layers[layer_i]._font = font;
-  // Clear layer data
   console->_layers[layer_i]._tiles_count = 0;
 }
 

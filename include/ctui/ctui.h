@@ -54,6 +54,30 @@ typedef enum CTUI_ColorMode {
 } CTUI_ColorMode;
 
 typedef struct CTUI_Console CTUI_Console;
+typedef struct CTUI_Font CTUI_Font;
+typedef struct CTUI_Renderer CTUI_Renderer;
+
+typedef struct CTUI_RendererVtable {
+  int (*init)(CTUI_Renderer *renderer);
+  void (*destroy)(CTUI_Renderer *renderer);
+  void (*resize)(CTUI_Renderer *renderer, int width, int height);
+  void (*render)(CTUI_Renderer *renderer, CTUI_Console *console);
+  void *(*getOrCreateFontTexture)(CTUI_Renderer *renderer, CTUI_Font *font);
+  void (*freeFontTexture)(CTUI_Renderer *renderer, void *texture_handle);
+  void (*setTransform)(CTUI_Renderer *renderer, const float *matrix4x4);
+  void (*makeCurrent)(CTUI_Renderer *renderer);
+} CTUI_RendererVtable;
+
+typedef struct CTUI_Renderer {
+  const CTUI_RendererVtable *vtable;
+  void *user_data;
+} CTUI_Renderer;
+
+int CTUI_rendererInit(CTUI_Renderer *r);
+void CTUI_rendererDestroy(CTUI_Renderer *r);
+void CTUI_rendererResize(CTUI_Renderer *r, int w, int h);
+void CTUI_rendererRender(CTUI_Renderer *r, CTUI_Console *c);
+void CTUI_rendererMakeCurrent(CTUI_Renderer *r);
 
 typedef void (*CTUI_DestroyCallback)(CTUI_Console *console);
 typedef void (*CTUI_ResizeCallback)(CTUI_Console *console,
@@ -100,7 +124,7 @@ typedef void (*CTUI_SetWindowOpacityCallback)(CTUI_Console *console,
                                               float opacity);
 typedef float (*CTUI_GetWindowOpacityCallback)(CTUI_Console *console);
 
-typedef struct CTUI_TuiPlatform {
+typedef struct CTUI_PlatformVtable {
   int is_resizable;
   CTUI_DestroyCallback destroy;
   CTUI_ResizeCallback resize;
@@ -136,7 +160,7 @@ typedef struct CTUI_TuiPlatform {
   CTUI_RequestWindowAttentionCallback requestWindowAttention;
   CTUI_SetWindowOpacityCallback setWindowOpacity;
   CTUI_GetWindowOpacityCallback getWindowOpacity;
-} CTUI_TuiPlatform;
+} CTUI_PlatformVtable;
 
 typedef enum CTUI_Key {
   CTUIK_SPACE = 32,
@@ -388,7 +412,7 @@ typedef struct CTUI_Context {
 } CTUI_Context;
 
 typedef struct CTUI_Console {
-  CTUI_TuiPlatform *_platform;
+  CTUI_PlatformVtable *_platform;
   CTUI_Context *_ctx;
   int _is_real_terminal;
   CTUI_Console *_next;
@@ -534,10 +558,17 @@ void CTUI_refresh(CTUI_Console *console);
 
 void CTUI_clear(CTUI_Console *console);
 
-struct CTUI_Console *CTUI_createGlfwOpengl33FakeTerminal(
-    struct CTUI_Context *context, CTUI_DVector2 tile_pixel_wh,
+typedef void *(*CTUI_GLGetProcAddress)(const char *name);
+
+CTUI_Renderer *
+CTUI_createOpenGL33Renderer(CTUI_GLGetProcAddress getProcAddress);
+
+void CTUI_destroyOpenGL33Renderer(CTUI_Renderer *renderer);
+
+CTUI_Console *CTUI_createGlfwOpengl33FakeTerminal(
+    CTUI_Context *context, CTUI_DVector2 tile_pixel_wh,
     size_t layer_count, const CTUI_LayerInfo *layer_infos,
-    enum CTUI_ColorMode color_mode, const char *title);
+    CTUI_ColorMode color_mode, const char *title);
 
 CTUI_Console *CTUI_createNcursesRealTerminal(CTUI_Context *ctx, int layer_count,
                                              enum CTUI_ColorMode color_mode);

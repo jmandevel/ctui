@@ -212,7 +212,7 @@ static int CTUI_getMouseButtonNcurses(CTUI_Console *console, int button) {
   return ncurses_console->mouse_buttons[button];
 }
 
-static CTUI_TuiPlatform CTUI_PLATFORM_NCURSES = {
+static CTUI_PlatformVtable CTUI_PLATFORM_VTABLE_NCURSES = {
     .is_resizable = 1,
     .destroy = CTUI_destroyConsoleNcurses,
     .resize = NULL,
@@ -283,7 +283,7 @@ CTUI_Console *CTUI_createNcursesRealTerminal(CTUI_Context *ctx, int layer_count,
   }
   CTUI_NcursesConsole *ncurses_console = calloc(1, sizeof(CTUI_NcursesConsole));
   CTUI_Console *console = &ncurses_console->base;
-  console->_platform = &CTUI_PLATFORM_NCURSES;
+  console->_platform = &CTUI_PLATFORM_VTABLE_NCURSES;
   console->_ctx = ctx;
   console->_is_real_terminal = 1;
   console->_effective_color_mode = best_mode;
