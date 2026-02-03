@@ -247,7 +247,11 @@ static CTUI_PlatformVtable CTUI_PLATFORM_VTABLE_NCURSES = {
     .getWindowFocused = NULL,
     .requestWindowAttention = NULL,
     .setWindowOpacity = NULL,
-    .getWindowOpacity = NULL};
+    .getWindowOpacity = NULL,
+    .hideWindow = NULL,
+    .showWindow = NULL,
+    .setWindowedTileWh = NULL,
+    .setWindowedFullscreen = NULL};
 
 CTUI_Console *CTUI_createNcursesRealTerminal(CTUI_Context *ctx, int layer_count,
                                              CTUI_ColorMode color_mode) {

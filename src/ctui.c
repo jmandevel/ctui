@@ -811,6 +811,33 @@ float CTUI_getWindowOpacity(CTUI_Console *console) {
   return 1.0f;
 }
 
+void CTUI_hideWindow(CTUI_Console *console) {
+  if (console->_platform != NULL && console->_platform->hideWindow != NULL) {
+    console->_platform->hideWindow(console);
+  }
+}
+
+void CTUI_showWindow(CTUI_Console *console) {
+  if (console->_platform != NULL && console->_platform->showWindow != NULL) {
+    console->_platform->showWindow(console);
+  }
+}
+
+void CTUI_setWindowedTileWh(CTUI_Console *console,
+                            CTUI_SVector2 console_tile_wh) {
+  if (console->_platform != NULL &&
+      console->_platform->setWindowedTileWh != NULL) {
+    console->_platform->setWindowedTileWh(console, console_tile_wh);
+  }
+}
+
+void CTUI_setWindowedFullscreen(CTUI_Console *console) {
+  if (console->_platform != NULL &&
+      console->_platform->setWindowedFullscreen != NULL) {
+    console->_platform->setWindowedFullscreen(console);
+  }
+}
+
 CTUI_SVector2 CTUI_getGlyphTilesWh(const CTUI_Glyph *glyph) {
   return glyph->_tiles_wh;
 }

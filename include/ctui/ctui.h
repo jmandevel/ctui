@@ -743,6 +743,11 @@ typedef void (*CTUI_RequestWindowAttentionCallback)(CTUI_Console *console);
 typedef void (*CTUI_SetWindowOpacityCallback)(CTUI_Console *console,
                                               float opacity);
 typedef float (*CTUI_GetWindowOpacityCallback)(CTUI_Console *console);
+typedef void (*CTUI_HideWindowCallback)(CTUI_Console *console);
+typedef void (*CTUI_ShowWindowCallback)(CTUI_Console *console);
+typedef void (*CTUI_SetWindowedTileWhCallback)(CTUI_Console *console,
+                                               CTUI_SVector2 tile_wh);
+typedef void (*CTUI_SetWindowedFullscreenCallback)(CTUI_Console *console);
 
 typedef struct CTUI_PlatformVtable {
   int is_resizable;
@@ -780,6 +785,10 @@ typedef struct CTUI_PlatformVtable {
   CTUI_RequestWindowAttentionCallback requestWindowAttention;
   CTUI_SetWindowOpacityCallback setWindowOpacity;
   CTUI_GetWindowOpacityCallback getWindowOpacity;
+  CTUI_HideWindowCallback hideWindow;
+  CTUI_ShowWindowCallback showWindow;
+  CTUI_SetWindowedTileWhCallback setWindowedTileWh;
+  CTUI_SetWindowedFullscreenCallback setWindowedFullscreen;
 } CTUI_PlatformVtable;
 
 typedef enum CTUI_Key {

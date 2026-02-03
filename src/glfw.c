@@ -450,6 +450,12 @@ static float CTUI_getWindowOpacityGlfw(CTUI_Console *console) {
   return glfwGetWindowOpacity(glfw_console->window);
 }
 
+// Forward declarations for window management functions defined after vtable
+static void CTUI_hideWindowGlfw(CTUI_Console *console);
+static void CTUI_showWindowGlfw(CTUI_Console *console);
+static void CTUI_setWindowedTileWhGlfw(CTUI_Console *console, CTUI_SVector2 tile_wh);
+static void CTUI_setWindowedFullscreenGlfw(CTUI_Console *console);
+
 // Platform vtable
 static CTUI_PlatformVtable CTUI_PLATFORM_VTABLE_GLFW = {
     .is_resizable = 1,
@@ -484,7 +490,11 @@ static CTUI_PlatformVtable CTUI_PLATFORM_VTABLE_GLFW = {
     .getWindowFocused = CTUI_getWindowFocusedGlfw,
     .requestWindowAttention = CTUI_requestWindowAttentionGlfw,
     .setWindowOpacity = CTUI_setWindowOpacityGlfw,
-    .getWindowOpacity = CTUI_getWindowOpacityGlfw
+    .getWindowOpacity = CTUI_getWindowOpacityGlfw,
+    .hideWindow = CTUI_hideWindowGlfw,
+    .showWindow = CTUI_showWindowGlfw,
+    .setWindowedTileWh = CTUI_setWindowedTileWhGlfw,
+    .setWindowedFullscreen = CTUI_setWindowedFullscreenGlfw
 };
 
 static CTUI_Console *CTUI_createGlfwConsoleFromWindow(
@@ -566,7 +576,7 @@ static CTUI_Console *CTUI_createGlfwConsoleFromWindow(
   return console;
 }
 
-void CTUI_hideWindow(CTUI_Console *console) {
+static void CTUI_hideWindowGlfw(CTUI_Console *console) {
   if (console->_is_real_terminal) {
     return;
   }
@@ -577,7 +587,7 @@ void CTUI_hideWindow(CTUI_Console *console) {
   }
 }
 
-void CTUI_showWindow(CTUI_Console *console) {
+static void CTUI_showWindowGlfw(CTUI_Console *console) {
   if (console->_is_real_terminal) {
     return;
   }
@@ -588,7 +598,7 @@ void CTUI_showWindow(CTUI_Console *console) {
   }
 }
 
-void CTUI_setWindowedTileWh(CTUI_Console *console, CTUI_SVector2 console_tile_wh) {
+static void CTUI_setWindowedTileWhGlfw(CTUI_Console *console, CTUI_SVector2 console_tile_wh) {
   if (console->_is_real_terminal) {
     return;
   }
@@ -625,7 +635,7 @@ void CTUI_setWindowedTileWh(CTUI_Console *console, CTUI_SVector2 console_tile_wh
   CTUI_clear(console);
 }
 
-void CTUI_setWindowedFullscreen(CTUI_Console *console) {
+static void CTUI_setWindowedFullscreenGlfw(CTUI_Console *console) {
   if (console->_is_real_terminal) {
     return;
   }
