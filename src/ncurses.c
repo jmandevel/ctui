@@ -114,21 +114,23 @@ static void CTUI_refreshNcurses(CTUI_Console *console) {
 
 static void CTUI_pollEventsNcurses(CTUI_Console *console) {
   nodelay(stdscr, TRUE);
-  int rows, cols;
-  getmaxyx(stdscr, rows, cols);
-  if ((size_t)cols != console->_console_tile_wh.x ||
-      (size_t)rows != console->_console_tile_wh.y) {
-    console->_console_tile_wh.x = cols;
-    console->_console_tile_wh.y = rows;
-    CTUI_Event ev = {0};
-    ev.type = CTUI_EVENT_RESIZE;
-    ev.console = console;
-    ev.data.resize.console_tile_wh = console->_console_tile_wh;
-    CTUI_pushEvent(console->_ctx, &ev);
-    CTUI_clear(console);
-  }
   int ch = getch();
   while (ch != ERR) {
+    // Handle resize event
+    if (ch == KEY_RESIZE) {
+      int rows, cols;
+      getmaxyx(stdscr, rows, cols);
+      console->_console_tile_wh.x = cols;
+      console->_console_tile_wh.y = rows;
+      CTUI_Event ev = {0};
+      ev.type = CTUI_EVENT_RESIZE;
+      ev.console = console;
+      ev.data.resize.console_tile_wh = console->_console_tile_wh;
+      CTUI_pushEvent(console->_ctx, &ev);
+      CTUI_clear(console);
+      ch = getch();
+      continue;
+    }
     int ctui_key = CTUI_translateKeyNcurses(ch);
     if (ctui_key != -1) {
       CTUI_Event ev = {0};
