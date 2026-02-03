@@ -50,7 +50,8 @@ int runMainLoopBody(CTUI_Context *ctx, CTUI_Console *console) {
       const CTUI_SVector2 console_tile_wh = CTUI_getConsoleTileWh(console);
       TRAIL_COUNT = console_tile_wh.x;
       if (TRAIL_COUNT >= TRAIL_CAPACITY) {
-        Trail *new_trails = (Trail *)realloc(TRAILS, TRAIL_COUNT * sizeof(Trail));
+        Trail *new_trails =
+            (Trail *)realloc(TRAILS, TRAIL_COUNT * sizeof(Trail));
         if (new_trails == NULL) {
           return 0;
         }
@@ -92,24 +93,6 @@ int runMainLoopBody(CTUI_Context *ctx, CTUI_Console *console) {
     CTUI_refresh(console);
     return 1;
   }
-  CTUI_Color bright_green = {
-      .palette8 = 2,                         // Green
-      .palette16 = 10,                       // Bright green
-      .palette256 = 46,                      // Bright green
-      .full = (CTUI_Color32){0, 255, 0, 255} // Bright green RGB
-  };
-  CTUI_Color dark_green = {
-      .palette8 = 2,    // Green (same as bright in 8-color mode)
-      .palette16 = 2,   // Dark green
-      .palette256 = 22, // Dark green
-      .full = (CTUI_Color32){0, 128, 0, 255} // Dark green RGB
-  };
-  CTUI_Color black = {
-      .palette8 = 0,                       // Black
-      .palette16 = 0,                      // Black
-      .palette256 = 0,                     // Black
-      .full = (CTUI_Color32){0, 0, 0, 255} // Black RGB
-  };
   for (size_t i = 0; i < TRAIL_COUNT && i < screen_width; i++) {
     Trail *trail = &TRAILS[i];
     if (trail->alive == 0) {
@@ -120,18 +103,10 @@ int runMainLoopBody(CTUI_Context *ctx, CTUI_Console *console) {
       if (y >= 0 && y < screen_height) {
         char digit = '0' + (rand() % 10);
         CTUI_Color fg_color;
-        if (j == 0) {
-          fg_color = bright_green;
-        } else {
-          float intensity = 1.0f - (float)j / trail->length;
-          if (intensity > 0.4f) {
-            fg_color = bright_green;
-          } else {
-            fg_color = dark_green;
-          }
-        }
+        float intensity = 1.0f - (float)j / trail->length;
+        fg_color = CTUI_RGBA32N(0, intensity, 0, 1);
         CTUI_pushCodepoint(layer, (uint32_t)digit, (CTUI_IVector2){trail->x, y},
-                           fg_color, black);
+                           fg_color, CTUI_BLACK);
       }
     }
   }

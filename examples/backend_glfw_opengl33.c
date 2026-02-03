@@ -17,7 +17,7 @@ int main() {
   const CTUI_LayerInfo infos[2] = {
       (CTUI_LayerInfo){.font = font, .tile_div_wh = {1, 1}},
       (CTUI_LayerInfo){.font = font, .tile_div_wh = {1, 1}}};
-  const CTUI_ColorMode color = CTUI_COLORMODE_FULL;
+  const CTUI_ColorMode color = CTUIC_RGBA32;
   const char *title = "glfw opengl33 window";
   CTUI_Console *console = CTUI_createGlfwOpengl33FakeTerminal(
       ctx, tile_pixel_wh, layer_count, infos, color, title);
