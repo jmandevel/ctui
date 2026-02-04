@@ -65,6 +65,24 @@ uint8_t CTUI_getNearestAnsi256Cube555Channel(uint8_t channel) {
   return 5;
 }
 
+size_t CTUI_getColorModeCount(CTUI_ColorMode mode) {
+  switch (mode) {
+    case CTUI_COLORMODE_NO_COLORS:
+      return 1;
+    case CTUI_COLORMODE_ANSI8:
+      return 8;
+    case CTUI_COLORMODE_ANSI16:
+      return 16;
+    case CTUI_COLORMODE_ANSI256:
+      return 256;
+    case CTUI_COLORMODE_TRUECOLOR:
+      return 16777216ULL;
+    case CTUI_COLORMODE_TRUECOLOR_ALPHA:
+      return 4294967296ULL;
+  }
+  return 1;
+}
+
 // https://www.compuphase.com/cmetric.htm
 // https://en.wikipedia.org/wiki/Color_difference
 int CTUI_getColorDistanceSquared(uint8_t r1, uint8_t g1, uint8_t b1, uint8_t r2,
@@ -1012,8 +1030,16 @@ CTUI_ConsoleLayer *CTUI_getConsoleLayer(CTUI_Console *console, size_t layer_i) {
                                 layer_i * console->_layer_size);
 }
 
-CTUI_ColorMode CTUI_getConsoleColorMode(const CTUI_Console *console) {
-  return console->_effective_color_mode;
+CTUI_ColorMode CTUI_getConsoleFgColorMode(const CTUI_Console *console) {
+  return console->_fg_mode;
+}
+
+CTUI_ColorMode CTUI_getConsoleBgColorMode(const CTUI_Console *console) {
+  return console->_bg_mode;
+}
+
+CTUI_ColorMode CTUI_getConsoleHasColors(const CTUI_Console *console) {
+  return console->_has_colors;
 }
 
 int CTUI_getConsoleIsRealTerminal(const CTUI_Console *console) {

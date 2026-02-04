@@ -637,6 +637,8 @@ typedef struct CTUI_Color {
 #define CTUI_GRAY22 CTUI_ANSI256(CTUIP_ANSI256_GRAY22)
 #define CTUI_GRAY23 CTUI_ANSI256(CTUIP_ANSI256_GRAY23)
 
+size_t CTUI_getColorModeCount(CTUI_ColorMode mode);
+
 extern const CTUI_ColorRgba32 CTUI_ANSI16_PALETTE[16];
 extern const uint8_t CTUI_CUBE555_CHANNELS[6];
 int CTUI_getColorDistanceSquared(uint8_t r1, uint8_t g1, uint8_t b1, uint8_t r2,
@@ -1085,7 +1087,9 @@ typedef struct CTUI_Console {
   void *_layers;
   CTUI_Color _fill_bg_color;
   int _fill_bg_set;
-  CTUI_ColorMode _effective_color_mode;
+  CTUI_ColorMode _fg_mode;
+  CTUI_ColorMode _bg_mode;
+  int _has_colors;
 } CTUI_Console;
 
 int CTUI_getHasRealTerminal();
@@ -1140,7 +1144,11 @@ size_t CTUI_getConsoleLayerCount(const CTUI_Console *console);
 
 CTUI_ConsoleLayer *CTUI_getConsoleLayer(CTUI_Console *console, size_t layer_i);
 
-CTUI_ColorMode CTUI_getConsoleColorMode(const CTUI_Console *console);
+CTUI_ColorMode CTUI_getConsoleFgColorMode(const CTUI_Console *console);
+
+CTUI_ColorMode CTUI_getConsoleBgColorMode(const CTUI_Console *console);
+
+CTUI_ColorMode CTUI_getConsoleHasColors(const CTUI_Console *console);
 
 int CTUI_getConsoleIsRealTerminal(const CTUI_Console *console);
 
@@ -1242,7 +1250,7 @@ CTUI_Console *CTUI_createGlfwOpengl33FakeTerminal(
     const CTUI_LayerInfo *layer_infos, CTUI_ColorMode color_mode,
     const char *title);
 
-CTUI_Console *CTUI_createNcursesRealTerminal(CTUI_Context *ctx, int layer_count);
+CTUI_Console *CTUI_createNcursesRealTerminal(CTUI_Context *ctx, int layer_count, CTUI_ColorMode fg_mode, CTUI_ColorMode bg_mode);
 
 #ifdef __cplusplus
 }

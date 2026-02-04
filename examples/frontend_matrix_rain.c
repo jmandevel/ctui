@@ -112,9 +112,6 @@ int runMainLoopBody(CTUI_Context *ctx, CTUI_Console *console) {
                 (CTUI_IVector2){1, 4}, 99, 0, CTUI_BRIGHT_RED, CTUI_BLACK);
   CTUI_pushCstr(layer1, "Press f to toggle fullscreen.", (CTUI_IVector2){1, 6},
                 99, 0, CTUI_BRIGHT_RED, CTUI_BLACK);
-  CTUI_pushCstr(layer1,
-                "Notice how this text uses a seperate font that is half width.",
-                (CTUI_IVector2){1, 9}, 99, 0, CTUI_BRIGHT_RED, CTUI_BLACK);
   CTUI_fill(layer0, ' ', CTUI_BLACK, CTUI_BLACK);
   for (size_t i = 0; i < TRAIL_COUNT; i++) {
     Trail *trail = &TRAILS[i];
