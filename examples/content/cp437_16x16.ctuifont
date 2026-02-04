@@ -1,4 +1,4 @@
-spartan_16x16_cp437
+cp437_16x16
 16 16 blend_fgbg
 0 16 0 16 0 0          # NULL
 16 32 0 16 0 9786      # WHITE SMILING FACE ☺
