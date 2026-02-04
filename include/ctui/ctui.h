@@ -1250,6 +1250,26 @@ CTUI_Console *CTUI_createGlfwOpengl33FakeTerminal(
     const CTUI_LayerInfo *layer_infos, CTUI_ColorMode color_mode,
     const char *title);
 
+// TODO sort this out
+typedef enum CTUI_NcursesColorMode {
+  // create the pairs on terminal creation and then determine the pair id later through lazy evaluation
+  // pro: easy to setup, fast lookup. good enough for most cases if you only care about ansi16 fg and bg
+  // con: if max color pairs is lower than max colors squared, can not use all colors avaliable
+  CTUI_NCURSES_LAZY,
+  // create new color pairs as each frame is drawn and reuse pairs if it makes sense
+  // pro: all colors supported by system are avaliable
+  // con: can cause flickering if max color pairs is lower than the amount of color pairs used
+  CTUI_NCURSES_EAGER,
+  // create the intial pairs from a user provided list of ansi color pairs
+  // pro: fast hash map lookup for colors in list
+  // con: slow for colors that do not exactly match colors in list
+  CTUI_NCURSES_GIVEN
+};
+
+typedef struct CTUI_NcursesColorInfo {
+ // TODO
+} CTUINcursesColorInfo;
+
 CTUI_Console *CTUI_createNcursesRealTerminal(CTUI_Context *ctx, int layer_count, CTUI_ColorMode fg_mode, CTUI_ColorMode bg_mode);
 
 #ifdef __cplusplus
