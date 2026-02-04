@@ -184,15 +184,11 @@ static void CTUI_glfwScrollCallback(GLFWwindow *window, double xoffset, double y
 static void CTUI_glfwFramebufferSizeCallback(GLFWwindow *window, int width, int height) {
   CTUI_GlfwConsole *glfw_console = (CTUI_GlfwConsole *)glfwGetWindowUserPointer(window);
   if (glfw_console == NULL) return;
-  
   glfwMakeContextCurrent(window);
-  
   if (glfw_console->renderer) {
     glfw_console->renderer->vtable->resize(glfw_console->renderer, width, height);
   }
-  
   CTUI_updateBaseTransform(glfw_console);
-  
   CTUI_Console *console = &glfw_console->base;
   CTUI_Event ev = {0};
   ev.type = CTUI_EVENT_RESIZE;
@@ -599,11 +595,8 @@ static void CTUI_showWindowGlfw(CTUI_Console *console) {
 }
 
 static void CTUI_setWindowedTileWhGlfw(CTUI_Console *console, CTUI_SVector2 console_tile_wh) {
-  if (console->_is_real_terminal) {
-    return;
-  }
   CTUI_GlfwConsole *glfw_console = (CTUI_GlfwConsole *)console;
-  
+  console->_console_tile_wh = console_tile_wh;
   if (glfw_console->is_fullscreen) {
     glfwSetWindowMonitor(
         glfw_console->window, NULL, 100, 100,
@@ -615,22 +608,16 @@ static void CTUI_setWindowedTileWhGlfw(CTUI_Console *console, CTUI_SVector2 cons
     int win_h = (int)((double)console_tile_wh.y * glfw_console->tile_pixel_wh.y);
     glfwSetWindowSize(glfw_console->window, win_w, win_h);
   }
-  
-  console->_console_tile_wh = console_tile_wh;
-  
   if (!glfw_console->is_visible) {
     glfwShowWindow(glfw_console->window);
     glfw_console->is_visible = 1;
   }
-  
   glfwMakeContextCurrent(glfw_console->window);
   int fb_w, fb_h;
   glfwGetFramebufferSize(glfw_console->window, &fb_w, &fb_h);
-  
   if (glfw_console->renderer) {
     glfw_console->renderer->vtable->resize(glfw_console->renderer, fb_w, fb_h);
   }
-  
   CTUI_updateBaseTransform(glfw_console);
   CTUI_clear(console);
 }
