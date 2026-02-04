@@ -10,7 +10,7 @@ int main() {
         return 2;
     }
     const size_t layer_count = 2;
-    CTUI_Console* console = CTUI_createNcursesRealTerminal(ctx, layer_count, CTUI_COLORMODE_ANSI256, CTUI_COLORMODE_NO_COLORS);
+    CTUI_Console* console = CTUI_createNcursesRealTerminal(ctx, layer_count, CTUI_COLORMODE_ANSI256, CTUI_COLORMODE_ANSI256);
 
     if (!startApp(ctx, console)) {
         return 3;
