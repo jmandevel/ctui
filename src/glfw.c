@@ -619,7 +619,6 @@ static void CTUI_setWindowedTileWhGlfw(CTUI_Console *console, CTUI_SVector2 cons
     glfw_console->renderer->vtable->resize(glfw_console->renderer, fb_w, fb_h);
   }
   CTUI_updateBaseTransform(glfw_console);
-  CTUI_clear(console);
 }
 
 static void CTUI_setWindowedFullscreenGlfw(CTUI_Console *console) {
@@ -655,7 +654,6 @@ static void CTUI_setWindowedFullscreenGlfw(CTUI_Console *console) {
   }
   
   CTUI_updateBaseTransform(glfw_console);
-  CTUI_clear(console);
 }
 
 CTUI_Console *CTUI_createGlfwOpengl33FakeTerminal(

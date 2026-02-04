@@ -94,7 +94,7 @@ int runMainLoopBody(CTUI_Context *ctx, CTUI_Console *console) {
           trail->alive = 1;
           trail->x = i;
           trail->head = 0;
-          trail->length = 5 + rand() % 50; 
+          trail->length = 5 + rand() % 50;
         }
       } else {
         trail->head++;
@@ -115,6 +115,7 @@ int runMainLoopBody(CTUI_Context *ctx, CTUI_Console *console) {
   CTUI_pushCstr(layer1,
                 "Notice how this text uses a seperate font that is half width.",
                 (CTUI_IVector2){1, 9}, 99, 0, CTUI_BRIGHT_RED, CTUI_BLACK);
+  CTUI_fill(layer0, ' ', CTUI_BLACK, CTUI_BLACK);
   for (size_t i = 0; i < TRAIL_COUNT; i++) {
     Trail *trail = &TRAILS[i];
     if (trail->alive == 0) {
@@ -132,7 +133,6 @@ int runMainLoopBody(CTUI_Context *ctx, CTUI_Console *console) {
       }
     }
   }
-  CTUI_refresh(console);
-  CTUI_clear(console);
+  CTUI_refresh(ctx);
   return 1;
 }

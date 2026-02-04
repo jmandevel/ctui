@@ -8,6 +8,8 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
+#define CTUI_NS_FOR_FPS(S) (uint64_t)(1000000000.0 / (S))
+
 #define UTF32_REPLACEMENT_CHARACTER 0xFFFD
 
 typedef enum CTUI_PaletteIndexAnsi8 {
@@ -751,6 +753,14 @@ typedef void (*CTUI_SetWindowedTileWhCallback)(CTUI_Console *console,
                                                CTUI_SVector2 tile_wh);
 typedef void (*CTUI_SetWindowedFullscreenCallback)(CTUI_Console *console);
 
+typedef struct CTUI_ConsoleLayer CTUI_ConsoleLayer;
+typedef void (*CTUI_PushCodepointCallback)(CTUI_ConsoleLayer *layer,
+                                           uint32_t codepoint,
+                                           CTUI_IVector2 pos_xy,
+                                           CTUI_Color fg, CTUI_Color bg);
+typedef void (*CTUI_FillCallback)(CTUI_ConsoleLayer *layer, uint32_t codepoint,
+                                   CTUI_Color fg, CTUI_Color bg);
+
 typedef struct CTUI_PlatformVtable {
   int is_resizable;
   CTUI_DestroyCallback destroy;
@@ -791,6 +801,10 @@ typedef struct CTUI_PlatformVtable {
   CTUI_ShowWindowCallback showWindow;
   CTUI_SetWindowedTileWhCallback setWindowedTileWh;
   CTUI_SetWindowedFullscreenCallback setWindowedFullscreen;
+  // Layer operations - platform-specific tile handling
+  size_t layer_size; // Size of platform-specific layer struct (0 = use default CTUI_ConsoleLayer)
+  CTUI_PushCodepointCallback pushCodepoint;
+  CTUI_FillCallback fill;
 } CTUI_PlatformVtable;
 
 typedef enum CTUI_Key {
@@ -1021,11 +1035,9 @@ typedef struct CTUI_ConsoleTile {
 } CTUI_ConsoleTile;
 
 typedef struct CTUI_ConsoleLayer {
+  CTUI_Console *_console;
   CTUI_DVector2 _tile_div_wh;
   CTUI_Font *_font;
-  size_t _tiles_capacity;
-  size_t _tiles_count;
-  CTUI_ConsoleTile *_tiles;
 } CTUI_ConsoleLayer;
 
 typedef struct CTUI_LayerInfo {
@@ -1040,6 +1052,8 @@ typedef struct CTUI_Context {
   size_t _event_queue_capacity;
   size_t _event_queue_count;
   size_t _event_queue_head;
+  uint64_t _target_frame_ns;
+  uint64_t _last_frame_ns;
 } CTUI_Context;
 
 typedef struct CTUI_Console {
@@ -1050,7 +1064,8 @@ typedef struct CTUI_Console {
   CTUI_Console *_prev;
   CTUI_SVector2 _console_tile_wh;
   size_t _layer_count;
-  CTUI_ConsoleLayer *_layers;
+  size_t _layer_size;
+  void *_layers;
   CTUI_Color _fill_bg_color;
   int _fill_bg_set;
   CTUI_ColorMode _effective_color_mode;
@@ -1061,6 +1076,10 @@ int CTUI_getHasRealTerminal();
 CTUI_Context *CTUI_createContext();
 
 void CTUI_destroyContext(CTUI_Context *ctx);
+
+void CTUI_setTargetFrameNs(CTUI_Context *ctx, uint64_t target_frame_ns);
+
+uint64_t CTUI_getTargetFrameNs(CTUI_Context *ctx);
 
 int CTUI_hasConsole(CTUI_Context *ctx);
 
@@ -1094,11 +1113,9 @@ CTUI_DVector2 CTUI_getLayerTileDivWh(const CTUI_ConsoleLayer *layer);
 void CTUI_setLayerTileDivWh(CTUI_Console *console, size_t layer_i,
                             CTUI_DVector2 tile_div_wh);
 
-const CTUI_Font *CTUI_getLayerFont(const CTUI_ConsoleLayer *layer);
+const CTUI_Font *CTUI_getFont(const CTUI_ConsoleLayer *layer);
 
-void CTUI_setLayerFont(CTUI_Console *console, size_t layer_i, CTUI_Font *font);
-
-size_t CTUI_getLayerTilesCount(const CTUI_ConsoleLayer *layer);
+void CTUI_setFont(CTUI_ConsoleLayer *layer, CTUI_Font *font);
 
 CTUI_SVector2 CTUI_getConsoleTileWh(const CTUI_Console *console);
 
@@ -1191,11 +1208,10 @@ void CTUI_pushCstr(CTUI_ConsoleLayer *layer, const char *text,
                      CTUI_IVector2 pos_xy, size_t wrap_width, size_t max_height,
                      CTUI_Color fg, CTUI_Color bg);
 
-void CTUI_fill(CTUI_Console *console, CTUI_Color bg);
+void CTUI_fill(CTUI_ConsoleLayer *layer, uint32_t codepoint, CTUI_Color fg,
+               CTUI_Color bg);
 
-void CTUI_refresh(CTUI_Console *console);
-
-void CTUI_clear(CTUI_Console *console);
+void CTUI_refresh(CTUI_Context* ctx);
 
 typedef void *(*CTUI_GLGetProcAddress)(const char *name);
 

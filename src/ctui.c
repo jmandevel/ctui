@@ -8,6 +8,7 @@
 #include <windows.h>
 #else
 #include <unistd.h>
+#include <time.h>
 #endif
 #include <fnv/fnv.h>
 
@@ -293,42 +294,8 @@ int CTUI_nextEvent(CTUI_Context *ctx, CTUI_Event *event) {
   return 0;
 }
 
-void CTUI_clear(CTUI_Console *console) {
-  console->_fill_bg_set = 0;
-  for (size_t l = 0; l < console->_layer_count; ++l) {
-    CTUI_ConsoleLayer *layer = &console->_layers[l];
-    layer->_tiles_count = 0;
-  }
-}
-
 int CTUI_hasConsole(CTUI_Context *context) {
   return context->_first_console != NULL;
-}
-
-static int CTUI_ensureCapacity(CTUI_ConsoleLayer *layer, size_t capacity) {
-  if (layer->_tiles_capacity < capacity) {
-    size_t new_capacity =
-        layer->_tiles_capacity == 0 ? 64 : layer->_tiles_capacity * 2;
-    while (new_capacity < capacity) {
-      new_capacity *= 2;
-    }
-    CTUI_ConsoleTile *new_tiles =
-        realloc(layer->_tiles, sizeof(CTUI_ConsoleTile) * new_capacity);
-    if (new_tiles == NULL) {
-      // TODO
-      return 0;
-    }
-    layer->_tiles = new_tiles;
-    layer->_tiles_capacity = new_capacity;
-  }
-  return 1;
-}
-
-static CTUI_ConsoleTile *CTUI_getNewTile(CTUI_ConsoleLayer *layer) {
-  if (!CTUI_ensureCapacity(layer, layer->_tiles_count + 1)) {
-    return NULL;
-  }
-  return &layer->_tiles[layer->_tiles_count++];
 }
 
 void CTUI_pushCodepoint(CTUI_ConsoleLayer *layer, uint32_t codepoint,
@@ -336,15 +303,10 @@ void CTUI_pushCodepoint(CTUI_ConsoleLayer *layer, uint32_t codepoint,
   if (pos_xy.x < 0 || pos_xy.y < 0) {
     return;
   }
-  CTUI_ConsoleTile *tile = CTUI_getNewTile(layer);
-  if (tile == NULL) {
-    // TODO
-    return;
+  CTUI_Console *console = layer->_console;
+  if (console->_platform != NULL && console->_platform->pushCodepoint != NULL) {
+    console->_platform->pushCodepoint(layer, codepoint, pos_xy, fg, bg);
   }
-  tile->_pos_xy = (CTUI_SVector2){.x = (size_t)pos_xy.x, .y = (size_t)pos_xy.y};
-  tile->_codepoint = codepoint;
-  tile->_fg = fg;
-  tile->_bg = bg;
 }
 
 uint32_t CTUI_decodeUtf8Cstr(const char **str) {
@@ -455,21 +417,56 @@ void CTUI_pushCstr(CTUI_ConsoleLayer *layer, const char *text,
   return;
 }
 
-void CTUI_fill(CTUI_Console *console, CTUI_Color bg) {
-  console->_fill_bg_color = bg;
-  console->_fill_bg_set = 1;
+void CTUI_fill(CTUI_ConsoleLayer *layer, uint32_t codepoint, CTUI_Color fg,
+               CTUI_Color bg) {
+  if (layer->_console->_platform->fill) {
+    layer->_console->_platform->fill(layer, codepoint, fg, bg);
+  }
 }
 
-void CTUI_refresh(struct CTUI_Console *console) {
-  if (console->_platform != NULL && console->_platform->refresh != NULL) {
-    console->_platform->refresh(console);
+void CTUI_refresh(CTUI_Context* ctx) {
+  if (ctx->_target_frame_ns > 0) {
+    uint64_t target_frame_ns = ctx->_target_frame_ns;
+    uint64_t last_frame_ns = ctx->_last_frame_ns;
+    struct timespec ts;
+    timespec_get(&ts, TIME_UTC);
+    uint64_t now_ns = (uint64_t)ts.tv_sec * 1000000000ULL + (uint64_t)ts.tv_nsec;
+    if (last_frame_ns > 0) {
+      uint64_t elapsed_ns = now_ns - last_frame_ns;
+      if (elapsed_ns < target_frame_ns) {
+        uint64_t sleep_ns = target_frame_ns - elapsed_ns;
+        struct timespec sleep_time = {
+          .tv_sec = (time_t)(sleep_ns / 1000000000ULL),
+          .tv_nsec = (long)(sleep_ns % 1000000000ULL)
+        };
+        nanosleep(&sleep_time, NULL);
+      }
+    }
+    timespec_get(&ts, TIME_UTC);
+    ctx->_last_frame_ns = (uint64_t)ts.tv_sec * 1000000000ULL + (uint64_t)ts.tv_nsec;
+  }
+  for (CTUI_Console* console = ctx->_first_console; console != NULL; console = console->_next)
+  {
+    if (console->_platform != NULL && console->_platform->refresh != NULL) {
+      console->_platform->refresh(console);
+    }
   }
 }
 
 CTUI_Context *CTUI_createContext() {
   CTUI_Context *ctx = (CTUI_Context *)calloc(1, sizeof(CTUI_Context));
   CTUI_initEventQueue(ctx);
+  ctx->_target_frame_ns = CTUI_NS_FOR_FPS(60);
+  ctx->_last_frame_ns = 0;
   return ctx;
+}
+
+void CTUI_setTargetFrameNs(CTUI_Context *ctx, uint64_t target_frame_ns) {
+  ctx->_target_frame_ns = target_frame_ns;
+}
+
+uint64_t CTUI_getTargetFrameNs(CTUI_Context *ctx) {
+  return ctx->_target_frame_ns;
 }
 
 CTUI_Font *CTUI_createFont(const char *ctuifont_path, const char **image_paths,
@@ -977,7 +974,8 @@ CTUI_DVector2 CTUI_getLayerTileDivWh(const CTUI_ConsoleLayer *layer) {
 
 void CTUI_setLayerTileDivWh(CTUI_Console *console, size_t layer_i,
                             CTUI_DVector2 tile_div_wh) {
-  if (layer_i >= console->_layer_count) {
+  CTUI_ConsoleLayer *layer = CTUI_getConsoleLayer(console, layer_i);
+  if (layer == NULL) {
     return;
   }
   // Ensure non-zero divisors
@@ -985,25 +983,16 @@ void CTUI_setLayerTileDivWh(CTUI_Console *console, size_t layer_i,
     tile_div_wh.x = 1;
   if (tile_div_wh.y == 0)
     tile_div_wh.y = 1;
-  console->_layers[layer_i]._tile_div_wh = tile_div_wh;
   // Clear layer data
-  console->_layers[layer_i]._tiles_count = 0;
+  layer->_tile_div_wh = tile_div_wh;
 }
 
-const CTUI_Font *CTUI_getLayerFont(const CTUI_ConsoleLayer *layer) {
+const CTUI_Font *CTUI_getFont(const CTUI_ConsoleLayer *layer) {
   return layer->_font;
 }
 
-void CTUI_setLayerFont(CTUI_Console *console, size_t layer_i, CTUI_Font *font) {
-  if (layer_i >= console->_layer_count) {
-    return;
-  }
-  console->_layers[layer_i]._font = font;
-  console->_layers[layer_i]._tiles_count = 0;
-}
-
-size_t CTUI_getLayerTilesCount(const CTUI_ConsoleLayer *layer) {
-  return layer->_tiles_count;
+void CTUI_setFont(CTUI_ConsoleLayer *layer, CTUI_Font *font) {
+  layer->_font = font;
 }
 
 CTUI_SVector2 CTUI_getConsoleTileWh(const CTUI_Console *console) {
@@ -1015,10 +1004,12 @@ size_t CTUI_getConsoleLayerCount(const CTUI_Console *console) {
 }
 
 CTUI_ConsoleLayer *CTUI_getConsoleLayer(CTUI_Console *console, size_t layer_i) {
-  if (layer_i >= console->_layer_count) {
+  if (layer_i >= console->_layer_count || console->_layers == NULL) {
     return NULL;
   }
-  return &console->_layers[layer_i];
+  // Use layer_size for proper indexing with platform-specific layer structs
+  return (CTUI_ConsoleLayer *)((char *)console->_layers +
+                                layer_i * console->_layer_size);
 }
 
 CTUI_ColorMode CTUI_getConsoleColorMode(const CTUI_Console *console) {
