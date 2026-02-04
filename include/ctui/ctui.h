@@ -309,6 +309,12 @@ typedef enum CTUI_PaletteIndexAnsi256 {
 
 #define CTUIP_ANSI256_GRAY(V) (CTUI_PaletteIndexAnsi256)(232 + (V))
 
+typedef struct CTUI_ColorRgb24 {
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
+} CTUI_ColorRgb24;
+
 typedef struct CTUI_ColorRgb32 {
   uint8_t r;
   uint8_t g;
@@ -316,19 +322,30 @@ typedef struct CTUI_ColorRgb32 {
   uint8_t a;
 } CTUI_ColorRgba32;
 
-typedef enum CTUI_ColorMode {
+typedef enum CTUI_ColorKind {
   CTUIC_ANSI8,
   CTUIC_ANSI16,
   CTUIC_ANSI256,
+  CTUIC_RGB24,
   CTUIC_RGBA32
+} CTUI_ColorKind;
+
+typedef enum CTUI_ColorMode {
+  CTUI_COLORMODE_NO_COLORS,
+  CTUI_COLORMODE_ANSI8,
+  CTUI_COLORMODE_ANSI16,
+  CTUI_COLORMODE_ANSI256,
+  CTUI_COLORMODE_TRUECOLOR,
+  CTUI_COLORMODE_TRUECOLOR_ALPHA
 } CTUI_ColorMode;
 
 typedef struct CTUI_Color {
-  CTUI_ColorMode mode;
+  CTUI_ColorKind kind;
   union {
     CTUI_PaletteIndexAnsi8 ansi8;
     CTUI_PaletteIndexAnsi16 ansi16;
     CTUI_PaletteIndexAnsi256 ansi256;
+    CTUI_ColorRgb24 rgb24;
     CTUI_ColorRgba32 rgba32;
   } data;
 } CTUI_Color;
@@ -341,7 +358,7 @@ typedef struct CTUI_Color {
 
 #define CTUI_RGBA32(R, G, B, A)                                                \
   (CTUI_Color) {                                                               \
-    .mode = CTUIC_RGBA32, .data.rgba32 = (CTUI_ColorRgba32) {                  \
+    .kind = CTUIC_RGBA32, .data.rgba32 = (CTUI_ColorRgba32) {                  \
       .r = (R), .g = (G), .b = (B), .a = (A)                                   \
     }                                                                          \
   }
@@ -351,17 +368,17 @@ typedef struct CTUI_Color {
               CTUI_NORMAL255(A))
 
 #define CTUI_RGBA32_FROM_COLOR(V)                                              \
-  (CTUI_Color) { .mode = CTUIC_RGBA32, .data.rgba32 = (V) }                    \
+  (CTUI_Color) { .kind = CTUIC_RGBA32, .data.rgba32 = (V) }                    \
   }
 
 #define CTUI_ANSI8(V)                                                          \
-  (CTUI_Color) { .mode = CTUIC_ANSI8, .data.ansi8 = (V) }
+  (CTUI_Color) { .kind = CTUIC_ANSI8, .data.ansi8 = (V) }
 
 #define CTUI_ANSI16(V)                                                         \
-  (CTUI_Color) { .mode = CTUIC_ANSI16, .data.ansi16 = (V) }
+  (CTUI_Color) { .kind = CTUIC_ANSI16, .data.ansi16 = (V) }
 
 #define CTUI_ANSI256(V)                                                        \
-  (CTUI_Color) { .mode = CTUIC_ANSI256, .data.ansi256 = (V) }
+  (CTUI_Color) { .kind = CTUIC_ANSI256, .data.ansi256 = (V) }
 
 #define CTUI_BLACK CTUI_ANSI8(CTUIP_ANSI8_BLACK)
 #define CTUI_RED CTUI_ANSI8(CTUIP_ANSI8_RED)
@@ -1225,8 +1242,7 @@ CTUI_Console *CTUI_createGlfwOpengl33FakeTerminal(
     const CTUI_LayerInfo *layer_infos, CTUI_ColorMode color_mode,
     const char *title);
 
-CTUI_Console *CTUI_createNcursesRealTerminal(CTUI_Context *ctx, int layer_count,
-                                             enum CTUI_ColorMode color_mode);
+CTUI_Console *CTUI_createNcursesRealTerminal(CTUI_Context *ctx, int layer_count);
 
 #ifdef __cplusplus
 }

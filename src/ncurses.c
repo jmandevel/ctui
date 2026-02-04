@@ -106,9 +106,7 @@ static int CTUI_actualTilesEqual(const CTUI_ActualTile *a, const CTUI_ActualTile
   return memcmp(a, b, sizeof(CTUI_ActualTile)) == 0;
 }
 
-// Helper to add a draw command to a layer
 static CTUI_DrawCommand *CTUI_addDrawCommand(CTUI_NcursesConsoleLayer *layer) {
-  // Grow capacity if needed
   if (layer->_command_count >= layer->_command_capacity) {
     size_t new_capacity = layer->_command_capacity == 0 ? 64 : layer->_command_capacity * 2;
     CTUI_DrawCommand *new_commands = realloc(layer->_commands, new_capacity * sizeof(CTUI_DrawCommand));
@@ -121,7 +119,6 @@ static CTUI_DrawCommand *CTUI_addDrawCommand(CTUI_NcursesConsoleLayer *layer) {
   return &layer->_commands[layer->_command_count++];
 }
 
-// Ncurses pushCodepoint callback - add tile draw command
 static void CTUI_pushCodepointNcurses(CTUI_ConsoleLayer *base_layer,
                                        uint32_t codepoint, CTUI_IVector2 pos_xy,
                                        CTUI_Color fg, CTUI_Color bg) {
@@ -137,7 +134,6 @@ static void CTUI_pushCodepointNcurses(CTUI_ConsoleLayer *base_layer,
   cmd->_data._tile_pos = pos_xy;
 }
 
-// Ncurses fill callback - add fill draw command to layer
 static void CTUI_fillNcurses(CTUI_ConsoleLayer *base_layer, uint32_t codepoint,
                               CTUI_Color fg, CTUI_Color bg) {
   CTUI_NcursesConsoleLayer *layer = (CTUI_NcursesConsoleLayer *)base_layer;
@@ -191,29 +187,44 @@ static void CTUI_refreshNcurses(CTUI_Console *console) {
       CTUI_ActualTile *prev = &prev_buf[idx];
       if (CTUI_actualTilesEqual(cur, prev))
         continue;
-      *prev = *cur;
-      int fg, bg;
+      memcpy(prev, cur, sizeof(CTUI_ActualTile));
+      int fg, bg, pair_i;
       switch (console->_effective_color_mode) {
-      case CTUIC_ANSI256:
-        fg = (int)CTUI_convertToAnsi256(cur->_fg);
-        bg = (int)CTUI_convertToAnsi256(cur->_bg);
-        break;
-      case CTUIC_ANSI16:
-        fg = (int)CTUI_convertToAnsi16(cur->_fg);
-        bg = (int)CTUI_convertToAnsi16(cur->_bg);
-        break;
-      default:
+      case CTUI_COLORMODE_ANSI8:
         fg = (int)CTUI_convertToAnsi8(cur->_fg);
         bg = (int)CTUI_convertToAnsi8(cur->_bg);
+        if (fg == COLOR_WHITE && bg == COLOR_BLACK) {
+          pair_i = 0;
+        } else {
+          pair_i = (bg * 8) + fg;
+        }
+        attron(COLOR_PAIR(pair_i));
+      case CTUI_COLORMODE_ANSI16:
+        fg = (int)CTUI_convertToAnsi16(cur->_fg);
+        bg = (int)CTUI_convertToAnsi16(cur->_bg);
+        if (fg == COLOR_WHITE && bg == COLOR_BLACK) {
+          pair_i = 0;
+        } else {
+          pair_i = (bg * 16) + fg;
+        }
+        attron(COLOR_PAIR(pair_i));
+        break;
+      case CTUI_COLORMODE_ANSI256:
+        fg = (int)CTUI_convertToAnsi256(cur->_fg);
+        bg = (int)CTUI_convertToAnsi256(cur->_bg);
+        if (fg == COLOR_WHITE && bg == COLOR_BLACK) {
+          pair_i = 0;
+        } else {
+          pair_i = (bg * 256) + fg;
+        }
+        attron(COLOR_PAIR(pair_i));
+        break;
+      default:
         break;
       }
-      if (has_colors()) {
-        init_pair(1, fg, bg);
-        attron(COLOR_PAIR(1));
-      }
       mvaddch(y, x, (wchar_t)cur->_codepoint);
-      if (has_colors()) {
-        attroff(COLOR_PAIR(1));
+      if (console->_effective_color_mode != CTUI_COLORMODE_NO_COLORS) {
+        attroff(COLOR_PAIR(pair_i));
       }
     }
   }
@@ -398,8 +409,7 @@ static CTUI_PlatformVtable CTUI_PLATFORM_VTABLE_NCURSES = {
     .pushCodepoint = CTUI_pushCodepointNcurses,
     .fill = CTUI_fillNcurses};
 
-CTUI_Console *CTUI_createNcursesRealTerminal(CTUI_Context *ctx, int layer_count,
-                                             CTUI_ColorMode color_mode) {
+CTUI_Console *CTUI_createNcursesRealTerminal(CTUI_Context *ctx, int layer_count) {
   if (!CTUI_getHasRealTerminal()) {
     return NULL;
   }
@@ -412,25 +422,48 @@ CTUI_Console *CTUI_createNcursesRealTerminal(CTUI_Context *ctx, int layer_count,
 #ifdef NCURSES_MOUSE_VERSION
   mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
 #endif
-  CTUI_ColorMode best_mode = CTUIC_ANSI8;
-  if (has_colors()) {
-    start_color();
-    if (COLORS >= 256) {
-      best_mode = CTUIC_ANSI256;
-      use_default_colors();
-    } else if (COLORS >= 16) {
-      best_mode = CTUIC_ANSI16;
-    } else if (COLORS >= 8) {
-      best_mode = CTUIC_ANSI8;
+  CTUI_ColorMode best_mode;
+  start_color();
+  if (!has_colors()) {
+    best_mode = CTUI_COLORMODE_NO_COLORS;
+  } else if (COLORS >= 256 && COLOR_PAIRS >= (256 * 256)) {
+    best_mode = CTUI_COLORMODE_ANSI256;
+    int pair_i = 0;
+    for (int color_i1 = 0; color_i1 < 256; color_i1++) {
+      for (int color_i2 = 0; color_i2 < 256; color_i2++) {
+        if (color_i1 == COLOR_WHITE && color_i2 == COLOR_BLACK) {
+          init_pair(pair_i++, 0, 0);
+          continue;
+        }
+        init_pair(pair_i++, color_i1, color_i2);
+      }
     }
-  }
-  if (best_mode > color_mode)
-    best_mode = color_mode;
-  int maxc = (best_mode == CTUIC_ANSI256)  ? 256
-             : (best_mode == CTUIC_ANSI16) ? 16
-                                           : 8;
-  for (int i = 0; i < maxc && i < COLORS; ++i) {
-    init_pair(i, i, -1);
+  } else if (COLORS >= 16 && COLOR_PAIRS >= (16 * 16)) {
+    best_mode = CTUI_COLORMODE_ANSI16;
+    int pair_i = 0;
+    for (int color_i1 = 0; color_i1 < 16; color_i1++) {
+      for (int color_i2 = 0; color_i2 < 16; color_i2++) {
+        if (color_i1 == COLOR_WHITE && color_i2 == COLOR_BLACK) {
+          init_pair(pair_i++, 0, 0);
+          continue;
+        }
+        init_pair(pair_i++, color_i1, color_i2);
+      }
+    }
+  } else if (COLORS >= 8 && COLOR_PAIRS >= (8 * 8)) {
+    best_mode = CTUI_COLORMODE_ANSI8;
+    int pair_i = 0;
+    for (int color_i1 = 0; color_i1 < 8; color_i1++) {
+      for (int color_i2 = 0; color_i2 < 8; color_i2++) {
+        if (color_i1 == COLOR_WHITE && color_i2 == COLOR_BLACK) {
+          init_pair(pair_i++, 0, 0);
+          continue;
+        }
+        init_pair(pair_i++, color_i1, color_i2);
+      }
+    }
+  } else {
+    best_mode = CTUI_COLORMODE_NO_COLORS;
   }
   CTUI_NcursesConsole *ncurses_console = calloc(1, sizeof(CTUI_NcursesConsole));
   CTUI_Console *console = &ncurses_console->base;
@@ -445,8 +478,7 @@ CTUI_Console *CTUI_createNcursesRealTerminal(CTUI_Context *ctx, int layer_count,
   console->_layer_count = layer_count;
   console->_layer_size = sizeof(CTUI_NcursesConsoleLayer);
   console->_layers = calloc(layer_count, sizeof(CTUI_NcursesConsoleLayer));
-  
-  // Initialize layers with draw command arrays (empty to start)
+  console->_effective_color_mode = best_mode;
   for (int layer_i = 0; layer_i < layer_count; layer_i++) {
     CTUI_NcursesConsoleLayer *layer = CTUI_getNcursesLayer(console, layer_i);
     layer->base._console = console; // Set back-reference
@@ -456,14 +488,11 @@ CTUI_Console *CTUI_createNcursesRealTerminal(CTUI_Context *ctx, int layer_count,
     layer->_command_count = 0;
     layer->_command_capacity = 0;
   }
-  
-  // Allocate double buffers for actual tiles
   size_t buf_size = cols * rows;
   ncurses_console->_cur_buffer = calloc(buf_size, sizeof(CTUI_ActualTile));
   ncurses_console->_prev_buffer = calloc(buf_size, sizeof(CTUI_ActualTile));
   ncurses_console->_buffer_width = cols;
   ncurses_console->_buffer_height = rows;
-  
   if (ctx->_first_console != NULL) {
     ctx->_first_console->_prev = console;
   }

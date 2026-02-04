@@ -182,7 +182,7 @@ CTUI_PaletteIndexAnsi16 CTUI_convertRgba32ToAnsi16(CTUI_ColorRgba32 rgba32) {
 }
 
 CTUI_PaletteIndexAnsi8 CTUI_convertToAnsi8(CTUI_Color color) {
-  switch (color.mode) {
+  switch (color.kind) {
   case CTUIC_ANSI8:
     return color.data.ansi8;
   case CTUIC_ANSI16:
@@ -197,7 +197,7 @@ CTUI_PaletteIndexAnsi8 CTUI_convertToAnsi8(CTUI_Color color) {
 }
 
 CTUI_PaletteIndexAnsi16 CTUI_convertToAnsi16(CTUI_Color color) {
-  switch (color.mode) {
+  switch (color.kind) {
   case CTUIC_ANSI8:
     return CTUI_convertAnsi8ToAnsi16(color.data.ansi8);
   case CTUIC_ANSI16:
@@ -212,7 +212,7 @@ CTUI_PaletteIndexAnsi16 CTUI_convertToAnsi16(CTUI_Color color) {
 }
 
 CTUI_PaletteIndexAnsi256 CTUI_convertToAnsi256(CTUI_Color color) {
-  switch (color.mode) {
+  switch (color.kind) {
   case CTUIC_ANSI8:
     return CTUI_convertAnsi8ToAnsi256(color.data.ansi8);
   case CTUIC_ANSI16:
@@ -227,7 +227,7 @@ CTUI_PaletteIndexAnsi256 CTUI_convertToAnsi256(CTUI_Color color) {
 }
 
 CTUI_ColorRgba32 CTUI_convertToRgba32(CTUI_Color color) {
-  switch (color.mode) {
+  switch (color.kind) {
   case CTUIC_ANSI8:
     return CTUI_convertAnsi8ToRgba32(color.data.ansi8);
   case CTUIC_ANSI16:
