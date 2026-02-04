@@ -107,7 +107,8 @@ CTUI_ColorRgba32 CTUI_convertAnsi256ToRgba32(CTUI_PaletteIndexAnsi256 ansi256) {
     int r = cube_i / 36;
     int g = (cube_i / 6) % 6;
     int b = cube_i % 6;
-    return (CTUI_ColorRgba32){CTUI_CUBE555_CHANNELS[r], CTUI_CUBE555_CHANNELS[g],
+    return (CTUI_ColorRgba32){CTUI_CUBE555_CHANNELS[r],
+                              CTUI_CUBE555_CHANNELS[g],
                               CTUI_CUBE555_CHANNELS[b], 255};
   }
   uint8_t gray = CTUI_getNearestGrayChannel(ansi256_i - 232);
@@ -344,6 +345,114 @@ void CTUI_pushCodepoint(CTUI_ConsoleLayer *layer, uint32_t codepoint,
   tile->_codepoint = codepoint;
   tile->_fg = fg;
   tile->_bg = bg;
+}
+
+uint32_t CTUI_decodeUtf8Cstr(const char **str) {
+  const unsigned char *s = (const unsigned char *)*str;
+  if (*s == 0) {
+    return 0;
+  }
+
+  uint32_t codepoint;
+  int bytes;
+
+  if ((s[0] & 0x80) == 0) {
+    // 1-byte ASCII: 0xxxxxxx
+    codepoint = s[0];
+    bytes = 1;
+  } else if ((s[0] & 0xE0) == 0xC0) {
+    // 2-byte: 110xxxxx 10xxxxxx
+    if ((s[1] & 0xC0) != 0x80) {
+      *str += 1;
+      return UTF32_REPLACEMENT_CHARACTER;
+    }
+    codepoint = ((uint32_t)(s[0] & 0x1F) << 6) | (s[1] & 0x3F);
+    if (codepoint < 0x80) {
+      *str += 2;
+      return UTF32_REPLACEMENT_CHARACTER;
+    }
+    bytes = 2;
+  } else if ((s[0] & 0xF0) == 0xE0) {
+    // 3-byte: 1110xxxx 10xxxxxx 10xxxxxx
+    if ((s[1] & 0xC0) != 0x80 || (s[2] & 0xC0) != 0x80) {
+      *str += 1;
+      return UTF32_REPLACEMENT_CHARACTER;
+    }
+    codepoint = ((uint32_t)(s[0] & 0x0F) << 12) |
+                ((uint32_t)(s[1] & 0x3F) << 6) | (s[2] & 0x3F);
+    if (codepoint < 0x800) {
+      *str += 3;
+      return UTF32_REPLACEMENT_CHARACTER;
+    }
+    bytes = 3;
+  } else if ((s[0] & 0xF8) == 0xF0) {
+    // 4-byte: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+    if ((s[1] & 0xC0) != 0x80 || (s[2] & 0xC0) != 0x80 ||
+        (s[3] & 0xC0) != 0x80) {
+      *str += 1;
+      return 0xFFFD;
+    }
+    codepoint = ((uint32_t)(s[0] & 0x07) << 18) |
+                ((uint32_t)(s[1] & 0x3F) << 12) |
+                ((uint32_t)(s[2] & 0x3F) << 6) | (s[3] & 0x3F);
+    if (codepoint < 0x10000 || codepoint > 0x10FFFF) {
+      *str += 4;
+      return UTF32_REPLACEMENT_CHARACTER;
+    }
+    bytes = 4;
+  } else {
+    // invalid leading byte
+    *str += 1;
+    return UTF32_REPLACEMENT_CHARACTER;
+  }
+
+  *str += bytes;
+  return codepoint;
+}
+
+void CTUI_pushCstr(CTUI_ConsoleLayer *layer, const char *text,
+                   CTUI_IVector2 pos_xy, size_t wrap_width, size_t max_height,
+                   CTUI_Color fg, CTUI_Color bg) {
+  if (text == NULL) {
+    return;
+  }
+  int x = pos_xy.x;
+  int y = pos_xy.y;
+  int start_x = pos_xy.x;
+  size_t col = 0;
+  size_t line = 0;
+  while (*text != '\0') {
+    if (max_height > 0 && line >= max_height) {
+      break;
+    }
+    uint32_t codepoint = CTUI_decodeUtf8Cstr(&text);
+    if (codepoint == 0) {
+      break;
+    }
+    if (codepoint == '\n') {
+      x = start_x;
+      y++;
+      col = 0;
+      line++;
+      continue;
+    }
+    if (codepoint == '\r') {
+      continue;
+    }
+    if (wrap_width > 0 && col >= wrap_width) {
+      x = start_x;
+      y++;
+      col = 0;
+      line++;
+      if (max_height > 0 && line >= max_height) {
+        break;
+      }
+    }
+    CTUI_pushCodepoint(layer, codepoint, (CTUI_IVector2){x, y}, fg, bg);
+    x++;
+    col++;
+  }
+  return;
 }
 
 void CTUI_fill(CTUI_Console *console, CTUI_Color bg) {

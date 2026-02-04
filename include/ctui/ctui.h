@@ -8,6 +8,8 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
+#define UTF32_REPLACEMENT_CHARACTER 0xFFFD
+
 typedef enum CTUI_PaletteIndexAnsi8 {
   CTUIP_ANSI8_BLACK = 0,
   CTUIP_ANSI8_RED = 1,
@@ -1182,6 +1184,12 @@ int CTUI_getKeyState(CTUI_Console *console, CTUI_Key key);
 
 void CTUI_pushCodepoint(CTUI_ConsoleLayer *layer, uint32_t codepoint,
                         CTUI_IVector2 pos_xy, CTUI_Color fg, CTUI_Color bg);
+
+uint32_t CTUI_decodeUtf8Cstr(const char **str);
+
+void CTUI_pushCstr(CTUI_ConsoleLayer *layer, const char *text,
+                     CTUI_IVector2 pos_xy, size_t wrap_width, size_t max_height,
+                     CTUI_Color fg, CTUI_Color bg);
 
 void CTUI_fill(CTUI_Console *console, CTUI_Color bg);
 
