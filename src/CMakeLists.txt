@@ -3,7 +3,6 @@ target_sources(ctui
         "${CMAKE_CURRENT_SOURCE_DIR}/fnv.c"
         #"${CMAKE_CURRENT_SOURCE_DIR}/gl.c"
         "${CMAKE_CURRENT_SOURCE_DIR}/ctui.c"
-        "${CMAKE_CURRENT_SOURCE_DIR}/ncurses.c"
         #"${CMAKE_CURRENT_SOURCE_DIR}/opengl33.c"
         #"${CMAKE_CURRENT_SOURCE_DIR}/glfw.c"
 )
